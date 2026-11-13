@@ -1,0 +1,178 @@
+import type { WidgetConfig } from '@lifi/widget'
+import { describe, expect, test } from 'vitest'
+import { getLocalStorageOutput } from './getLocalStorageOutput.js'
+
+describe('getLocalStorageOutput', () => {
+  test('presents copy of the config with a variant property if present', () => {
+    const config = {
+      variant: 'wide',
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      variant: 'wide',
+    })
+  })
+
+  test('presents copy of the config with a mode property if present', () => {
+    const config = {
+      mode: 'split',
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      mode: 'split',
+    })
+  })
+
+  test('presents copy of the config with a appearance property if present', () => {
+    const config = {
+      appearance: 'system',
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      appearance: 'system',
+    })
+  })
+
+  test('presents copy of the config with colorSchemes if present', () => {
+    const config = {
+      theme: {
+        colorSchemes: {
+          light: {
+            palette: {
+              primary: {
+                main: '#5C67FF',
+              },
+              secondary: {
+                main: '#F7C2FF',
+              },
+            },
+          },
+          dark: {
+            palette: {
+              primary: {
+                main: '#3A45CC',
+              },
+            },
+          },
+        },
+      },
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      theme: {
+        colorSchemes: {
+          light: {
+            palette: {
+              primary: {
+                main: '#5C67FF',
+              },
+              secondary: {
+                main: '#F7C2FF',
+              },
+            },
+          },
+          dark: {
+            palette: {
+              primary: {
+                main: '#3A45CC',
+              },
+            },
+          },
+        },
+      },
+    })
+  })
+
+  test('presents copy of the config with a typography fontFamily property if present', () => {
+    const config = {
+      theme: {
+        typography: {
+          fontFamily: 'Inter, sans-serif',
+        },
+      },
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      theme: {
+        typography: {
+          fontFamily: 'Inter, sans-serif',
+        },
+      },
+    })
+  })
+
+  test('presents copy of the config with a shape borderRadius property if present', () => {
+    const config = {
+      theme: {
+        shape: {
+          borderRadius: 8,
+        },
+      },
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      theme: {
+        shape: {
+          borderRadius: 8,
+        },
+      },
+    })
+  })
+
+  test('presents copy of the config with a shape borderRadiusSecondary property if present', () => {
+    const config = {
+      theme: {
+        shape: {
+          borderRadiusSecondary: 12,
+        },
+      },
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      theme: {
+        shape: {
+          borderRadiusSecondary: 12,
+        },
+      },
+    })
+  })
+
+  test('presents copy of the config with a walletConfig property if present', () => {
+    const config = {
+      walletConfig: {},
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({
+      walletConfig: {},
+    })
+  })
+
+  test('presents an object removing config items not supported by the playground editor', () => {
+    const config = {
+      bridges: {
+        allow: ['stargate'],
+        deny: ['connext'],
+      },
+    } as Partial<WidgetConfig>
+
+    const whitelistedConfig = getLocalStorageOutput(config)
+
+    expect(whitelistedConfig).toEqual({})
+  })
+})

@@ -1,0 +1,145 @@
+import { isWalletInstalled } from '@lifi/widget-provider'
+import type { Chain } from 'viem'
+import { createClient, fallback, http } from 'viem'
+import { mainnet as mainnetBase } from 'viem/chains'
+import type { Config, CreateConnectorFn } from 'wagmi'
+import { createConfig } from 'wagmi'
+import type {
+  BaseAccountParameters,
+  CoinbaseWalletParameters,
+  MetaMaskParameters,
+  WalletConnectParameters,
+} from 'wagmi/connectors'
+import { safe } from 'wagmi/connectors'
+import { createBaseAccountConnector } from '../connectors/baseAccount.js'
+import { createCoinbaseConnector } from '../connectors/coinbase.js'
+import { createMetaMaskConnector } from '../connectors/metaMask.js'
+import { createWalletConnectConnector } from '../connectors/walletConnect.js'
+
+// Drop viem's bundled mainnet default (eth.merkle.io); BE RPCs arrive via useSyncWagmiConfig.
+const mainnet: Chain = {
+  ...mainnetBase,
+  rpcUrls: {
+    ...mainnetBase.rpcUrls,
+    default: { http: [] },
+  },
+}
+
+export interface DefaultWagmiConfigProps {
+  walletConnect?: WalletConnectParameters
+  coinbase?: CoinbaseWalletParameters
+  metaMask?: MetaMaskParameters
+  baseAccount?: BaseAccountParameters
+  wagmiConfig?: {
+    ssr?: boolean
+    multiInjectedProviderDiscovery?: boolean
+  }
+  connectors?: CreateConnectorFn[]
+  /**
+   * Load Wallet SDKs only if the wallet is the most recently connected wallet
+   */
+  lazy?: boolean
+}
+
+export interface DefaultWagmiConfigResult {
+  config: Config
+  connectors: CreateConnectorFn[]
+}
+
+/**
+ * Creates default Wagmi config that can be later synced (via useSyncWagmiConfig) with chains fetched from LI.FI API.
+ * @param props Properties to setup connectors. {@link DefaultWagmiConfigProps}
+ * @returns Wagmi config and connectors. {@link DefaultWagmiConfigResult}
+ * @example
+ *  const { config, connectors } = createDefaultWagmiConfig({
+ *    walletConnect: {
+ *      projectId: import.meta.env.VITE_WALLET_CONNECT,
+ *    },
+ *    coinbase: { appName: 'LI.FI Demo' },
+ *  });
+ *  export const WalletProvider: FC<PropsWithChildren> = ({ children }) => {
+ *    const { chains } = useAvailableChains();
+ *    useSyncWagmiConfig(config, connectors, chains);
+ *    return (
+ *      <WagmiProvider config={wagmi.config} reconnectOnMount={false}>
+ *        {children}
+ *      </WagmiProvider>
+ *    );
+ *  };
+ */
+export function createDefaultWagmiConfig(
+  props?: DefaultWagmiConfigProps
+): DefaultWagmiConfigResult {
+  const connectors: CreateConnectorFn[] = [...(props?.connectors ?? [])]
+
+  const anyWindow = typeof window !== 'undefined' ? (window as any) : undefined
+  const localStorage = anyWindow?.localStorage
+  // in Multisig env, window.parent is not equal to window
+  const isIframeEnvironment = anyWindow && anyWindow.parent !== anyWindow
+
+  const multiInjectedProviderDiscovery = isIframeEnvironment
+    ? false
+    : (props?.wagmiConfig?.multiInjectedProviderDiscovery ?? true)
+
+  const config = createConfig({
+    chains: [mainnet],
+    client({ chain }) {
+      const urls = chain.rpcUrls.default.http
+      return createClient({
+        chain,
+        transport: urls.length
+          ? fallback(urls.map((url) => http(url)))
+          : http(),
+      })
+    },
+    ...props?.wagmiConfig,
+    multiInjectedProviderDiscovery,
+  })
+
+  if (isIframeEnvironment) {
+    connectors.unshift(safe())
+  }
+
+  // Retrieve the ID of the most recently connected wallet connector from storage
+  const recentConnectorId = localStorage?.getItem(
+    `${config.storage?.key}.recentConnectorId`
+  )
+
+  if (
+    props?.walletConnect &&
+    (recentConnectorId?.includes?.('walletConnect') || !props.lazy)
+  ) {
+    connectors.unshift(createWalletConnectConnector(props.walletConnect))
+  }
+
+  if (
+    props?.coinbase &&
+    !isWalletInstalled('coinbase') &&
+    (recentConnectorId?.includes?.('coinbaseWalletSDK') || !props.lazy)
+  ) {
+    connectors.unshift(createCoinbaseConnector(props.coinbase))
+  }
+
+  // Register the MetaMask SDK connector even when the extension is installed.
+  // The lazy gate matches any prior MetaMask connection (`io.metamask` or
+  // `metaMaskSDK`); reconnect probes resolve from the injected provider, so it
+  // costs no SDK download until the user connects through it.
+  if (
+    props?.metaMask &&
+    (recentConnectorId?.toLowerCase?.().includes?.('metamask') || !props.lazy)
+  ) {
+    connectors.unshift(createMetaMaskConnector(props.metaMask))
+  }
+
+  if (
+    props?.baseAccount &&
+    (recentConnectorId?.includes?.('baseAccount') || !props.lazy)
+  ) {
+    connectors.unshift(createBaseAccountConnector(props.baseAccount))
+  }
+
+  return {
+    config,
+    connectors,
+  }
+}

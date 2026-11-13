@@ -1,0 +1,207 @@
+import { useAccount } from '@lifi/wallet-management'
+import { useChainTypeFromAddress } from '@lifi/widget-provider'
+import CloseRounded from '@mui/icons-material/CloseRounded'
+import WarningRounded from '@mui/icons-material/WarningRounded'
+import { Box, Collapse } from '@mui/material'
+import { useNavigate } from '@tanstack/react-router'
+import { type MouseEventHandler, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useToAddressRequirements } from '../../hooks/useToAddressRequirements.js'
+import { useWidgetConfig } from '../../providers/WidgetProvider/WidgetProvider.js'
+import { useBookmarkActions } from '../../stores/bookmarks/useBookmarkActions.js'
+import { useBookmarks } from '../../stores/bookmarks/useBookmarks.js'
+import { useFieldActions } from '../../stores/form/useFieldActions.js'
+import { useFieldValues } from '../../stores/form/useFieldValues.js'
+import { defaultChainIdsByType } from '../../utils/chainType.js'
+import { navigationRoutes } from '../../utils/navigationRoutes.js'
+import { shortenAddress } from '../../utils/wallet.js'
+import { AccountAvatar } from '../Avatar/AccountAvatar.js'
+import type { CardProps } from '../Card/Card.js'
+import { Card } from '../Card/Card.js'
+import { CardIconButton } from '../Card/CardIconButton.js'
+import { CardTitle } from '../Card/CardTitle.js'
+import {
+  SendToWalletCardHeader,
+  SendToWalletCardTitleRow,
+  SendToWalletRequiredLabel,
+  SendToWalletRequiredLabelText,
+} from './SendToWalletButton.style.js'
+
+export const SendToWalletButton: React.FC<
+  CardProps & {
+    onEditAddress?: (() => void) | null
+    onClearAddress?: () => void
+    // Keep the card visible (and flag it required when empty) even when the
+    // widget's own toAddress requirement is off, e.g. a user-settable checkout
+    // recipient that must be filled before continuing.
+    requireAddress?: boolean
+  }
+> = ({ onEditAddress, onClearAddress, requireAddress, ...props }) => {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { disabledUI, hiddenUI, toAddress, toAddresses, mode, modeOptions } =
+    useWidgetConfig()
+  const [toAddressFieldValue, toChainId, toTokenAddress] = useFieldValues(
+    'toAddress',
+    'toChain',
+    'toToken'
+  )
+  const { setFieldValue } = useFieldActions()
+  const { selectedBookmark } = useBookmarks()
+  const { setSelectedBookmark } = useBookmarkActions()
+  const { accounts } = useAccount()
+  const { getChainFromAddress } = useChainTypeFromAddress()
+  const { requiredToAddress } = useToAddressRequirements()
+  const disabledToAddress = disabledUI?.toAddress
+  const hiddenToAddress = hiddenUI?.toAddress
+
+  const address = toAddressFieldValue
+    ? shortenAddress(toAddressFieldValue)
+    : t('sendToWallet.enterAddress', {
+        context: 'short',
+      })
+
+  const matchingConnectedAccount = accounts.find(
+    (account) => account.address === toAddressFieldValue
+  )
+
+  // A bookmark from the config or the URL may carry no chainId.
+  const detectedChain =
+    !matchingConnectedAccount &&
+    selectedBookmark?.chainId === undefined &&
+    toAddressFieldValue
+      ? getChainFromAddress(toAddressFieldValue)
+      : undefined
+
+  const chainType = !matchingConnectedAccount
+    ? selectedBookmark?.chainType || detectedChain?.chainType
+    : undefined
+
+  const chainId =
+    toChainId && toTokenAddress
+      ? toChainId
+      : matchingConnectedAccount
+        ? matchingConnectedAccount.chainId
+        : (selectedBookmark?.chainId ??
+          detectedChain?.chainId ??
+          (chainType ? defaultChainIdsByType[chainType] : undefined))
+
+  const isConnectedAccount =
+    selectedBookmark?.isConnectedAccount &&
+    matchingConnectedAccount?.isConnected
+  const connectedAccountName = matchingConnectedAccount?.connector?.name
+  const bookmarkName = selectedBookmark?.name
+
+  const headerTitle = isConnectedAccount
+    ? connectedAccountName || address
+    : bookmarkName || connectedAccountName || address
+
+  const headerSubheader =
+    isConnectedAccount || bookmarkName || connectedAccountName ? address : null
+
+  const disabledForChanges = Boolean(toAddressFieldValue) && disabledToAddress
+
+  // `onEditAddress === null` renders the card read-only (consumer-controlled,
+  // e.g. a fixed checkout recipient); a function overrides the default route nav.
+  const readOnly = onEditAddress === null || disabledForChanges
+
+  const handleOnClick = () => {
+    if (onEditAddress !== undefined) {
+      onEditAddress?.()
+      return
+    }
+    navigate({
+      to: toAddresses?.length
+        ? navigationRoutes.configuredWallets
+        : navigationRoutes.sendToWallet,
+    })
+  }
+
+  const clearSelectedBookmark: MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.stopPropagation()
+    if (onClearAddress) {
+      onClearAddress()
+      return
+    }
+    setFieldValue('toAddress', '', { isTouched: true })
+    setSelectedBookmark()
+  }
+
+  // The collapse opens instantly on first page load/component mount when there is an address to display
+  // After which it needs an animated transition for open and closing.
+  // collapseTransitionTime is used specify the transition time for opening and closing
+  const collapseTransitionTime = useRef(0)
+
+  // Timeout is needed here to push the collapseTransitionTime update to the back of the event loop so that it doesn't fired too quickly
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      collapseTransitionTime.current = 225
+    }, 0)
+    return () => clearTimeout(timeout)
+  }, [])
+
+  const addressRequired = requireAddress || requiredToAddress
+  const isOpenCollapse =
+    !hiddenToAddress && (addressRequired || !!toAddressFieldValue)
+
+  const title =
+    mode === 'custom' && modeOptions?.custom?.type === 'deposit'
+      ? t('header.depositTo')
+      : t('header.sendToWallet')
+
+  return (
+    <Collapse
+      timeout={collapseTransitionTime.current as number}
+      in={isOpenCollapse}
+      mountOnEnter
+      unmountOnExit
+    >
+      <Card
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a clickable MUI Card; a native button changes the card layout
+        role="button"
+        onClick={readOnly ? undefined : handleOnClick}
+        sx={{ width: '100%', ...props.sx }}
+      >
+        <SendToWalletCardTitleRow>
+          <CardTitle sx={{ p: 0 }}>{title}</CardTitle>
+          {addressRequired && !toAddressFieldValue ? (
+            <SendToWalletRequiredLabel variant="warning">
+              <WarningRounded sx={{ fontSize: 14 }} />
+              <SendToWalletRequiredLabelText type="icon">
+                {t('sendToWallet.required')}
+              </SendToWalletRequiredLabelText>
+            </SendToWalletRequiredLabel>
+          ) : null}
+        </SendToWalletCardTitleRow>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <SendToWalletCardHeader
+            avatar={
+              <AccountAvatar
+                chainId={chainId}
+                account={matchingConnectedAccount}
+                toAddress={toAddress}
+                empty={!toAddressFieldValue}
+              />
+            }
+            title={headerTitle}
+            subheader={headerSubheader}
+            selected={!!toAddressFieldValue || disabledToAddress}
+            action={
+              toAddressFieldValue && !readOnly ? (
+                <CardIconButton onClick={clearSelectedBookmark} size="small">
+                  <CloseRounded fontSize="inherit" />
+                </CardIconButton>
+              ) : null
+            }
+          />
+        </Box>
+      </Card>
+    </Collapse>
+  )
+}

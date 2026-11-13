@@ -1,0 +1,251 @@
+import { ChainType } from '@lifi/sdk'
+import {
+  useBitcoinContext,
+  useEthereumContext,
+  useSolanaContext,
+  useStellarContext,
+  useSuiContext,
+  useTronContext,
+  type WalletConnector,
+} from '@lifi/widget-provider'
+import { useMemo } from 'react'
+import { useWalletManagementConfig } from '../providers/WalletManagementProvider/WalletManagementContext.js'
+import { getConnectorIcon } from '../utils/getConnectorIcon.js'
+import { getWalletPriority } from '../utils/getWalletPriority.js'
+
+type CombinedWalletConnector = {
+  connector: WalletConnector
+  chainType: ChainType
+}
+
+export type CombinedWallet = {
+  id?: string
+  name: string
+  icon?: string
+  connectors: CombinedWalletConnector[]
+}
+
+const normalizeName = (name: string) => name.split(' ')[0].toLowerCase().trim()
+
+// Frozen: it is handed to the comparator by reference, so a consumer that
+// mutated the export would reorder every wallet in the picker.
+export const defaultWalletEcosystemsOrder: readonly ChainType[] = Object.freeze(
+  [
+    ChainType.EVM,
+    ChainType.SVM,
+    ChainType.MVM,
+    ChainType.UTXO,
+    ChainType.TVM,
+    ChainType.STL,
+  ]
+)
+
+export const combineWalletLists = (
+  ethereumConnectorList: WalletConnector[],
+  bitcoinConnectorList: WalletConnector[],
+  solanaWalletList: WalletConnector[],
+  suiWalletList: WalletConnector[],
+  tronWalletList: WalletConnector[],
+  stellarWalletList: WalletConnector[],
+  walletEcosystemsOrder?: Record<string, ChainType[]>
+): CombinedWallet[] => {
+  const walletMap = new Map<string, CombinedWallet>()
+
+  ethereumConnectorList.forEach((ethereum) => {
+    const ethereumName = ethereum?.displayName || ethereum?.name
+    const normalizedName = normalizeName(ethereumName)
+    const existing = walletMap.get(normalizedName) || {
+      id: ethereum.id,
+      name: ethereumName,
+      icon: getConnectorIcon(ethereum),
+      connectors: [] as CombinedWalletConnector[],
+    }
+    // A single wallet can surface more than one EVM connector (for example a
+    // configured SDK connector and its matching EIP-6963 announcement). Keep
+    // only the first one we see for a given wallet entry so the picker shows
+    // it once. Configured connectors are unshifted to the front of the wagmi
+    // connector list, so they take precedence over auto-discovered ones.
+    const hasEvmConnector = existing.connectors.some(
+      (c) => c.chainType === ChainType.EVM
+    )
+    if (!hasEvmConnector) {
+      existing.connectors.push({
+        connector: ethereum,
+        chainType: ChainType.EVM,
+      })
+    }
+    walletMap.set(normalizedName, existing)
+  })
+
+  bitcoinConnectorList.forEach((bitcoin) => {
+    const bitcoinName = bitcoin.name
+    const normalizedName = normalizeName(bitcoinName)
+    const existing = walletMap.get(normalizedName) || {
+      id: bitcoin.id,
+      name: bitcoinName,
+      icon: getConnectorIcon(bitcoin),
+      connectors: [] as CombinedWalletConnector[],
+    }
+    existing.connectors.push({ connector: bitcoin, chainType: ChainType.UTXO })
+    walletMap.set(normalizedName, existing)
+  })
+
+  solanaWalletList.forEach((solana) => {
+    const normalizedName = normalizeName(solana.name)
+    const existing = walletMap.get(normalizedName) || {
+      id: solana.name,
+      name: solana.name,
+      icon: solana.icon,
+      connectors: [] as CombinedWalletConnector[],
+    }
+    existing.connectors.push({
+      connector: solana,
+      chainType: ChainType.SVM,
+    })
+    walletMap.set(normalizedName, existing)
+  })
+
+  suiWalletList.forEach((sui) => {
+    const normalizedName = normalizeName(sui.name)
+    const existing = walletMap.get(normalizedName) || {
+      id: sui.name,
+      name: sui.name,
+      icon: sui.icon,
+      connectors: [] as CombinedWalletConnector[],
+    }
+    existing.connectors.push({ connector: sui, chainType: ChainType.MVM })
+    walletMap.set(normalizedName, existing)
+  })
+
+  tronWalletList.forEach((tron) => {
+    const normalizedName = normalizeName(tron.name)
+    const existing = walletMap.get(normalizedName) || {
+      id: tron.name,
+      name: tron.name,
+      icon: tron.icon,
+      connectors: [] as CombinedWalletConnector[],
+    }
+    existing.connectors.push({ connector: tron, chainType: ChainType.TVM })
+    walletMap.set(normalizedName, existing)
+  })
+
+  stellarWalletList.forEach((stellar) => {
+    const normalizedName = normalizeName(stellar.name)
+    const existing = walletMap.get(normalizedName) || {
+      id: stellar.id ?? stellar.name,
+      name: stellar.name,
+      icon: stellar.icon,
+      connectors: [] as CombinedWalletConnector[],
+    }
+    existing.connectors.push({ connector: stellar, chainType: ChainType.STL })
+    walletMap.set(normalizedName, existing)
+  })
+
+  const combinedWallets = Array.from(walletMap.values()).map((wallet) => {
+    const configured = walletEcosystemsOrder?.[wallet.name]
+    // Anything the consumer left out still follows the default, so a partial
+    // order cannot leak the list-building order back in.
+    const order = configured
+      ? [...new Set([...configured, ...defaultWalletEcosystemsOrder])]
+      : defaultWalletEcosystemsOrder
+    return {
+      ...wallet,
+      connectors: [...wallet.connectors].sort((a, b) =>
+        walletEcosystemsComparator(a, b, order)
+      ),
+    }
+  })
+  combinedWallets.sort(walletComparator)
+
+  return combinedWallets
+}
+
+export const useCombinedWallets = (): CombinedWallet[] => {
+  const walletConfig = useWalletManagementConfig()
+  const { installedWallets: installedEthereumWallets } = useEthereumContext()
+  const { installedWallets: installedBitcoinWallets } = useBitcoinContext()
+  const { installedWallets: installedSolanaWallets } = useSolanaContext()
+  const { installedWallets: installedSuiWallets } = useSuiContext()
+  const { installedWallets: installedTronWallets } = useTronContext()
+  const { installedWallets: installedStellarWallets } = useStellarContext()
+
+  const combinedWallets = useMemo(() => {
+    const includeEcosystem = (chainType: ChainType) =>
+      !walletConfig.enabledChainTypes ||
+      walletConfig.enabledChainTypes.includes(chainType)
+
+    const installedCombinedWallets = combineWalletLists(
+      includeEcosystem(ChainType.EVM) ? installedEthereumWallets : [],
+      includeEcosystem(ChainType.UTXO) ? installedBitcoinWallets : [],
+      includeEcosystem(ChainType.SVM) ? installedSolanaWallets : [],
+      includeEcosystem(ChainType.MVM) ? installedSuiWallets : [],
+      includeEcosystem(ChainType.TVM) ? installedTronWallets : [],
+      includeEcosystem(ChainType.STL) ? installedStellarWallets : [],
+      walletConfig.walletEcosystemsOrder
+    )
+
+    installedCombinedWallets.sort(walletComparator)
+
+    return installedCombinedWallets
+  }, [
+    installedEthereumWallets,
+    installedBitcoinWallets,
+    installedSolanaWallets,
+    installedSuiWallets,
+    installedTronWallets,
+    installedStellarWallets,
+    walletConfig,
+  ])
+
+  return combinedWallets
+}
+
+// Ensure the walletComparator function is updated to handle CombinedWallet
+const walletComparator = (a: CombinedWallet, b: CombinedWallet) => {
+  const idA = a.id ?? a.name
+  const idB = b.id ?? b.name
+
+  const priorityA = getWalletPriority(idA)
+  const priorityB = getWalletPriority(idB)
+
+  if (priorityA !== priorityB) {
+    return priorityA - priorityB
+  }
+
+  return idA.localeCompare(idB)
+}
+
+const walletEcosystemsComparator = (
+  a: CombinedWalletConnector,
+  b: CombinedWalletConnector,
+  order: readonly ChainType[]
+) => {
+  if (!order.length) {
+    return 0
+  }
+
+  const ecosystemA = a.chainType
+  const ecosystemB = b.chainType
+
+  if (ecosystemA === ecosystemB) {
+    return 0
+  }
+
+  const indexA = order.indexOf(ecosystemA)
+  const indexB = order.indexOf(ecosystemB)
+
+  // If both are in the order list, sort by their position
+  if (indexA !== -1 && indexB !== -1) {
+    return indexA - indexB
+  }
+
+  // If only one is in the order list, prioritize it
+  if (indexA !== -1) {
+    return -1
+  }
+  if (indexB !== -1) {
+    return 1
+  }
+
+  return 0
+}

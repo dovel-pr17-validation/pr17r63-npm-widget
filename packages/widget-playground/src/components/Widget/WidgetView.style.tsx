@@ -1,0 +1,129 @@
+import type { BoxProps, Theme } from '@mui/material'
+import { Box, IconButton } from '@mui/material'
+import { styled } from '@mui/material/styles'
+import type React from 'react'
+import { drawerZIndex } from '../../utils/sidebar.js'
+import { drawerShiftTransition } from '../../utils/widgetViewDrawer.js'
+import { mockElementHeight } from '../Mock/MockElement.js'
+
+interface FloatingToolsContainerProps extends BoxProps {
+  drawerOpen?: boolean
+  drawerWidth?: number
+}
+
+export const FloatingToolsContainer: React.FC<
+  React.ComponentProps<typeof Box> & FloatingToolsContainerProps
+> = styled(Box, {
+  shouldForwardProp: (prop) =>
+    !['drawerOpen', 'drawerWidth'].includes(prop as string),
+})<FloatingToolsContainerProps>(({ theme, drawerOpen, drawerWidth = 0 }) => ({
+  display: 'flex',
+  gap: theme.spacing(2),
+  position: 'absolute',
+  zIndex: drawerZIndex,
+  padding: theme.spacing(3, 0, 0, 3),
+  left: drawerOpen ? drawerWidth : 0,
+  transition: drawerShiftTransition(theme, 'left'),
+}))
+
+interface WidgetContainerProps extends BoxProps {
+  removePaddingTop?: boolean
+  alignTop?: boolean
+  withFixedHeaderOnPage?: boolean
+}
+
+export const WidgetContainer: React.FC<
+  React.ComponentProps<typeof Box> & WidgetContainerProps
+> = styled(Box, {
+  shouldForwardProp: (prop) =>
+    !['removePaddingTop', 'alignTop', 'withFixedHeaderOnPage'].includes(
+      prop as string
+    ),
+})<WidgetContainerProps>(({ theme }) => {
+  return {
+    display: 'flex',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
+    paddingTop: theme.spacing(12.5),
+    variants: [
+      {
+        props: ({ alignTop }) => alignTop,
+        style: {
+          justifyContent: 'flex-start',
+        },
+      },
+      {
+        props: ({ removePaddingTop }) => removePaddingTop,
+        style: {
+          paddingTop: 0,
+        },
+      },
+      {
+        props: ({ withFixedHeaderOnPage }) => withFixedHeaderOnPage,
+        style: {
+          paddingTop: mockElementHeight,
+        },
+      },
+    ],
+  }
+})
+
+interface WidgetContainerRowProps {
+  withMockHeader?: boolean
+  withFixedFooter?: boolean
+}
+
+export const WidgetContainerRow: React.FC<
+  React.ComponentProps<typeof Box> & WidgetContainerRowProps
+> = styled(Box, {
+  shouldForwardProp: (prop) =>
+    !['withMockHeader', 'withFixedFooter'].includes(prop as string),
+})<WidgetContainerRowProps>(({ withMockHeader, withFixedFooter }) => {
+  const offset =
+    (withMockHeader ? mockElementHeight : 0) +
+    (withFixedFooter ? mockElementHeight : 0)
+  return {
+    display: 'flex',
+    alignItems: 'flex-start',
+    flexGrow: 1,
+    width: '100%',
+    ...(offset > 0 && { maxHeight: `calc(100vh - ${offset}px)` }),
+  }
+})
+
+const floatingToolButtonColors = (theme: Theme) => ({
+  color: theme.vars.palette.text.primary,
+  backgroundColor: theme.vars.palette.common.white,
+  '&:hover': {
+    backgroundColor: `color-mix(in srgb, ${theme.vars.palette.common.background} 8%, transparent)`,
+  },
+  ...theme.applyStyles('dark', {
+    backgroundColor: theme.vars.palette.grey[900],
+    '&:hover': {
+      backgroundColor: `color-mix(in srgb, ${theme.vars.palette.common.background} 4%, transparent)`,
+    },
+  }),
+})
+
+export const DrawerOpenButton: React.FC<
+  React.ComponentProps<typeof IconButton>
+> = styled(IconButton)(({ theme }) => ({
+  ...floatingToolButtonColors(theme),
+  boxShadow:
+    '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
+}))
+
+export const Main: React.FC<
+  React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+> = styled('main')(() => ({
+  display: 'flex',
+  justifyContent: 'stretch',
+  position: 'relative',
+  flexGrow: 1,
+  '& > [data-rk]': {
+    display: 'flex',
+    flexGrow: '1',
+  },
+}))

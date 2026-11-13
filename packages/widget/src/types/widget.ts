@@ -1,0 +1,517 @@
+import type {
+  BaseToken,
+  ChainType,
+  ContractCall,
+  ExecutionOptions,
+  ExtendedChain,
+  Order,
+  Route,
+  RouteOptions,
+  SDKConfig,
+  StaticToken,
+  Token,
+} from '@lifi/sdk'
+import type { WalletMenuOpenArgs } from '@lifi/wallet-management'
+import type { WidgetProviderProps } from '@lifi/widget-provider'
+import type {
+  Components,
+  PaletteMode,
+  PaletteOptions,
+  Shape,
+  SxProps,
+  Theme,
+} from '@mui/material'
+import type { TypographyVariantsOptions } from '@mui/material/styles'
+import type {
+  CSSProperties,
+  PropsWithChildren,
+  ReactNode,
+  RefObject,
+} from 'react'
+import type {
+  LanguageKey,
+  LanguageResources,
+} from '../providers/I18nProvider/types.js'
+import type { DefaultFieldValues } from '../stores/form/types.js'
+
+export type WidgetVariant = 'compact' | 'wide' | 'drawer'
+
+/** @internal Not part of the public API. */
+export type InternalWidgetMode = 'limit'
+export type WidgetMode =
+  | 'default'
+  | 'split'
+  | 'custom'
+  | 'refuel'
+  | InternalWidgetMode
+export type SplitMode = 'bridge' | 'swap'
+export type SplitModeOptions = {
+  defaultTab: SplitMode
+}
+export type CustomMode = 'checkout' | 'deposit'
+export interface ModeOptions {
+  /**
+   * Configure split mode behavior:
+   * - 'bridge' | 'swap': Single mode without tabs
+   * - { defaultTab: 'bridge' | 'swap' }: Tabs mode with configurable default tab
+   */
+  split?: SplitMode | SplitModeOptions
+  custom?: { type: CustomMode }
+}
+
+/**
+ * Identity of a header navigation tab. Each key maps to a widget variant, mode and
+ * (optionally) mode options; labels are resolved from the key.
+ */
+export type SplitNavigationTabKey = SplitMode
+/** @internal Not part of the public API. */
+export type InternalNavigationTabKey =
+  | 'default'
+  | 'private'
+  | 'refuel'
+  | 'swap-advanced'
+  | 'bridge-advanced'
+  | 'limit'
+export type NavigationTabKey = InternalNavigationTabKey | SplitNavigationTabKey
+
+export type Appearance = PaletteMode | 'system'
+export interface NavigationProps {
+  /**
+   * If given, uses a negative margin to counteract the padding on sides for navigation elements like icon buttons.
+   * @default true
+   */
+  edge?: boolean
+}
+export type WidgetThemeComponents = Partial<
+  Pick<
+    Components<Theme>,
+    | 'MuiAppBar'
+    | 'MuiAvatar'
+    | 'MuiButton'
+    | 'MuiCard'
+    | 'MuiDrawer'
+    | 'MuiIconButton'
+    | 'MuiInputCard'
+    | 'MuiNavigationTabs'
+    | 'MuiNavigationTab'
+    | 'MuiTabs'
+    | 'MuiCheckbox'
+  >
+>
+
+export type WidgetTheme = {
+  colorSchemes?: {
+    light?: {
+      palette: PaletteOptions
+    }
+    dark?: {
+      palette: PaletteOptions
+    }
+  }
+  shape?: Partial<Shape>
+  typography?: TypographyVariantsOptions
+  components?: WidgetThemeComponents
+  container?: CSSProperties
+  routesContainer?: CSSProperties
+  chainSidebarContainer?: CSSProperties
+  header?: CSSProperties
+  navigation?: NavigationProps
+}
+
+export interface DisabledUIConfig {
+  fromAmount?: boolean
+  fromToken?: boolean
+  toAddress?: boolean
+  toToken?: boolean
+}
+
+export interface HiddenUIConfig {
+  addressBookConnectedWallets?: boolean
+  allNetworks?: boolean
+  appearance?: boolean
+  bridgesSettings?: boolean
+  chainSelect?: boolean
+  /**
+   * Hide the chain sidebar in the `wide` variant. No effect in other variants.
+   * @default false
+   */
+  chainSidebar?: boolean
+  contactSupport?: boolean
+  /**
+   * Hide the drawer close button. Only meaningful when `variant === 'drawer'`.
+   * @default false
+   */
+  drawerCloseButton?: boolean
+  fromToken?: boolean
+  gasRefuelMessage?: boolean
+  hideSmallBalances?: boolean
+  history?: boolean
+  insufficientGasMessage?: boolean
+  integratorStepDetails?: boolean
+  language?: boolean
+  /**
+   * Hide the warning shown when sending to an address with low historical
+   * on-chain activity (low transaction count or contract-like behavior).
+   * @default false
+   */
+  lowAddressActivityConfirmation?: boolean
+  poweredBy?: boolean
+  /**
+   * Hide the "Recent searches" section in the token select view.
+   * @default false
+   */
+  recentSearches?: boolean
+  reverseTokensButton?: boolean
+  routeCardPriceImpact?: boolean
+  routeTokenDescription?: boolean
+  searchTokenInput?: boolean
+  toAddress?: boolean
+  toToken?: boolean
+  walletMenu?: boolean
+}
+
+export interface RequiredUIConfig {
+  accountDeployedMessage?: boolean
+  toAddress?: boolean
+}
+
+export type DefaultUI = {
+  transactionDetailsExpanded?: boolean
+  navigationHeaderTitleNoWrap?: boolean
+  /**
+   * Layout for the main form.
+   * - `'default'`: the chain/token selectors plus single amount input.
+   * - `'cards'`: the redesigned card-based layout — stacked Send/Receive amount
+   *   cards (`AmountInputCardPair`) with inline token pill selectors and a swap
+   *   button.
+   * @default 'default'
+   */
+  layout?: 'default' | 'cards'
+}
+
+export interface WidgetWalletConfig {
+  walletEcosystemsOrder?: Record<string, ChainType[]>
+  onConnect?(args?: WalletMenuOpenArgs): void
+  /**
+   * Determines whether the widget should provide partial wallet management functionality.
+   *
+   * In partial mode, external wallet management will be used for "opt-out" providers,
+   * while the internal management is applied for any remaining providers that do not opt out.
+   * This allows a flexible balance between the integrator's custom wallet menu and the widget's native wallet menu.
+   * @default false
+   */
+  usePartialWalletManagement?: boolean
+  /**
+   * This option forces the widget to always use internal wallet management ignoring external wallet management contexts
+   * @default false
+   */
+  forceInternalWalletManagement?: boolean
+}
+
+export interface WidgetSDKConfig extends Omit<
+  SDKConfig,
+  | 'apiKey'
+  | 'disableVersionCheck'
+  | 'integrator'
+  | 'providers'
+  | 'routeOptions'
+  | 'widgetVersion'
+> {
+  routeOptions?: Omit<
+    RouteOptions,
+    'bridges' | 'exchanges' | 'fee' | 'referrer' | 'order' | 'slippage'
+  >
+  executionOptions?: Pick<ExecutionOptions, 'updateTransactionRequestHook'>
+}
+
+export interface WidgetContractTool {
+  name: string
+  logoURI: string
+}
+
+export interface CalculateFeeParams {
+  fromChain: ExtendedChain
+  toChain: ExtendedChain
+  fromToken: Token
+  toToken: Token
+  fromAddress?: string
+  toAddress?: string
+  fromAmount?: bigint
+  toAmount?: bigint
+  slippage?: number
+}
+
+export interface WidgetFeeConfig {
+  name?: string
+  logoURI?: string
+  fee?: number
+  /**
+   * Whether to show the fee percentage in the fee details.
+   * @default false
+   */
+  showFeePercentage?: boolean
+  /**
+   * Whether to show a tooltip with the fee details. Requires `name` or `feeTooltipComponent` to be set.
+   * @default false
+   */
+  showFeeTooltip?: boolean
+  /**
+   * Custom tooltip component to show with the fee details.
+   */
+  feeTooltipComponent?: ReactNode
+  /**
+   * Function to calculate fees before fetching quotes.
+   * If provided, this function will be used instead of the `fee` parameter.
+   * Only one of `fee` or `calculateFee` should be used.
+   *
+   * @param params Object containing the fee calculation parameters
+   * @returns A promise that resolves to the calculated fee as a number (e.g., 0.03 represents a 3% fee)
+   */
+  calculateFee?(params: CalculateFeeParams): Promise<number | undefined>
+}
+
+export interface ToAddress {
+  name?: string
+  address: string
+  chainType: ChainType
+  logoURI?: string
+}
+
+export interface AllowDeny<T> {
+  allow?: T[]
+  deny?: T[]
+}
+
+export type AllowDenySetItem = string | number
+export interface AllowDenySet {
+  allow?: Set<AllowDenySetItem>
+  deny?: Set<AllowDenySetItem>
+}
+
+export type AllowDenySets = {
+  from?: AllowDenySet
+  to?: AllowDenySet
+} & AllowDenySet
+
+export type AllowDenyItems<T> = {
+  from?: AllowDeny<T>
+  to?: AllowDeny<T>
+} & AllowDeny<T>
+
+export type WidgetChains = {
+  types?: AllowDeny<ChainType>
+} & AllowDenyItems<number>
+
+export type WidgetTokens = {
+  featured?: StaticToken[]
+  include?: Token[]
+  popular?: StaticToken[]
+  verified?: BaseToken[]
+} & AllowDenyItems<BaseToken>
+
+export type WidgetLanguages = {
+  default?: LanguageKey
+} & AllowDeny<LanguageKey>
+
+export type PoweredByType = 'default' | 'jumper'
+
+export interface RouteLabel {
+  text: string
+  sx?: SxProps<Theme>
+}
+
+export interface RouteLabelRule {
+  label: RouteLabel
+  // Matching criteria
+  bridges?: AllowDeny<string>
+  exchanges?: AllowDeny<string>
+  fromChainId?: number[]
+  toChainId?: number[]
+  fromTokenAddress?: string[]
+  toTokenAddress?: string[]
+  /**
+   * Custom match function evaluated against the route. When provided, its
+   * result is AND'd with the other matching criteria — all specified
+   * conditions must pass for the label to apply. Use this for matching logic
+   * that the built-in fields cannot express (gas costs, step count, route
+   * tags, etc.).
+   */
+  match?: (route: Route) => boolean
+}
+
+export type ExplorerUrl =
+  | string
+  | {
+      url: string
+      txPath?: string
+      addressPath?: string
+    }
+
+export type WidgetProvider = (
+  props: PropsWithChildren<WidgetProviderProps>
+) => ReactNode
+
+export interface WidgetConfig {
+  fromChain?: number
+  toChain?: number
+  fromToken?: string
+  toToken?: string
+  toAddress?: ToAddress
+  toAddresses?: ToAddress[]
+  fromAmount?: number | string
+  minFromAmountUSD?: number
+  toAmount?: number | string
+  formUpdateKey?: string
+
+  providers?: WidgetProvider[]
+
+  contractCalls?: ContractCall[]
+  contractComponent?: ReactNode
+  contractSecondaryComponent?: ReactNode
+  contractCompactComponent?: ReactNode
+  contractTool?: WidgetContractTool
+  integrator: string
+  apiKey?: string
+  feeConfig?: WidgetFeeConfig
+  referrer?: string
+
+  routePriority?: Order
+  slippage?: number
+
+  variant?: WidgetVariant
+  mode?: WidgetMode
+  modeOptions?: ModeOptions
+  /**
+   * Header navigation tabs, in order. When set, the widget renders a tab bar
+   * and the active tab drives the displayed flow. Each entry is a tab key.
+   *
+   * @internal Not part of the public API.
+   */
+  _navigationTabs?: NavigationTabKey[]
+
+  appearance?: Appearance
+  theme?: WidgetTheme
+
+  disabledUI?: DisabledUIConfig
+  hiddenUI?: HiddenUIConfig
+  requiredUI?: RequiredUIConfig
+  defaultUI?: DefaultUI
+  /**
+   * When true, shows only the recommended route and hides the route
+   * selector UI. Distinct from `routePriority`, which sets the SDK
+   * ranking order across multiple displayed routes.
+   * @default false
+   */
+  showSingleRoute?: boolean
+  useRelayerRoutes?: boolean
+
+  walletConfig?: WidgetWalletConfig
+  sdkConfig?: WidgetSDKConfig
+
+  buildUrl?: boolean
+  /**
+   * @deprecated Use `storageScopeKey` for persisted state and `queryScopeKey`
+   * for the query cache. Still honoured as the fallback for both.
+   */
+  keyPrefix?: string
+  /**
+   * Namespaces the widget's persisted state in `localStorage`: bookmarks,
+   * pinned tokens, recent tokens, chain order and route history, as
+   * `keyPrefix` does. Use a different value per widget instance that should
+   * keep its own state. Settings keep one shared name.
+   *
+   * It also scopes the widget's other queries (routes, tokens, balances, …),
+   * so instances with different values keep their data apart.
+   *
+   * Falls back to `keyPrefix`, then to the historical `li.fi-*` names.
+   */
+  storageScopeKey?: string
+  /**
+   * Scopes the widget's chains and tools queries inside the host's react-query
+   * `QueryClient`. Widget instances - and a host app using the
+   * `@lifi/widget/queries` factories - that pass the same value
+   * share those entries. The other widget queries are scoped by
+   * `storageScopeKey`.
+   *
+   * The keys start with a plain `'chains'` / `'tools'`, as in wagmi, so a host
+   * that matches on those roots (for example `setQueriesData({ queryKey:
+   * ['chains'] })`) also reaches the widget's entries.
+   *
+   * Falls back to `keyPrefix`, then to `'li.fi'`.
+   */
+  queryScopeKey?: string
+
+  bridges?: AllowDeny<string>
+  exchanges?: AllowDeny<string>
+  chains?: WidgetChains
+  tokens?: WidgetTokens
+  languages?: WidgetLanguages
+  languageResources?: LanguageResources
+  explorerUrls?: Record<number, ExplorerUrl[]> &
+    Partial<Record<'internal', ExplorerUrl[]>>
+  poweredBy?: PoweredByType
+
+  /**
+   * Custom labels/badges to show on routes based on specified rules
+   */
+  routeLabels?: RouteLabelRule[]
+}
+
+export interface FormFieldOptions {
+  setUrlSearchParam: boolean
+}
+
+export interface FieldValues extends Omit<
+  DefaultFieldValues,
+  'fromAmount' | 'toAmount' | 'toAddress'
+> {
+  fromAmount?: number | string
+  toAmount?: number | string
+  toAddress?: ToAddress | string
+}
+
+export type FieldNames = keyof FieldValues
+
+export type SetFieldValueFunction = <K extends FieldNames>(
+  key: K,
+  value: FieldValues[K],
+  options?: FormFieldOptions
+) => void
+
+export type FormState = {
+  setFieldValue: SetFieldValueFunction
+}
+
+export type FormRef = RefObject<FormState | null>
+
+export interface FormRefProps {
+  formRef?: FormRef
+}
+
+export interface WidgetConfigProps extends FormRefProps {
+  config: WidgetConfig
+}
+
+export interface WidgetConfigPartialProps {
+  config?: Partial<WidgetConfig>
+}
+
+export type WidgetProps = WidgetDrawerProps &
+  WidgetConfig &
+  WidgetConfigPartialProps &
+  FormRefProps
+
+export interface WidgetDrawerProps extends WidgetConfigPartialProps {
+  elementRef?: RefObject<HTMLDivElement>
+  open?: boolean
+  /**
+   * Make sure to make the onClose callback stable (e.g. using useCallback) to avoid causing re-renders of the entire widget
+   */
+  onClose?(): void
+}
+
+export enum ExpansionType {
+  Routes = 'routes',
+  FromChain = 'fromChain',
+  ToChain = 'toChain',
+}

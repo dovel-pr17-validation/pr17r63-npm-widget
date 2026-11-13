@@ -1,0 +1,100 @@
+import type { PropsWithChildren } from 'react'
+import { createContext, use, useRef } from 'react'
+import { create } from 'zustand'
+import { useShallow } from 'zustand/shallow'
+import type { HeaderState, HeaderStore } from './types.js'
+
+const HeaderStoreContext = createContext<HeaderStore | null>(null)
+
+// Not persisted, so it takes no storage scope.
+export function HeaderStoreProvider({ children }: PropsWithChildren): any {
+  const storeRef = useRef<HeaderStore>(null)
+  if (!storeRef.current) {
+    storeRef.current = createHeaderStore()
+  }
+  return (
+    <HeaderStoreContext value={storeRef.current}>{children}</HeaderStoreContext>
+  )
+}
+
+function useHeaderStoreContext() {
+  const useStore = use(HeaderStoreContext)
+  if (!useStore) {
+    throw new Error(
+      `You forgot to wrap your component in <${HeaderStoreProvider.name}>.`
+    )
+  }
+  return useStore
+}
+
+export function useHeaderStore<T>(selector: (state: HeaderState) => T): T {
+  const useStore = useHeaderStoreContext()
+  return useStore(useShallow(selector))
+}
+
+// We use fixed position on the header when Widget is in Full Height layout.
+// We do this to get it to work like the sticky header does in the other layout modes.
+// As the header is position fixed its not in the document flow anymore.
+// To prevent the remaining page content from appearing behind the header we need to
+// pass the headers height so that the position of the page content can be adjusted
+export function useHeaderHeight(): any {
+  const headerHeight = useHeaderStore((state) => state.headerHeight)
+
+  return {
+    headerHeight,
+  }
+}
+
+export function useSetHeaderHeight(): any {
+  const setHeaderHeight = useHeaderStore((state) => state.setHeaderHeight)
+
+  return {
+    setHeaderHeight,
+  }
+}
+
+const createHeaderStore = () =>
+  create<HeaderState>((set, get) => ({
+    headerHeight: 108, // default header height
+    setAction: (element) => {
+      set(() => ({
+        element,
+      }))
+      return get().removeAction
+    },
+    setTitle: (title) => {
+      set(() => ({
+        title,
+      }))
+      return get().removeTitle
+    },
+    removeAction: () => {
+      set(() => ({
+        element: null,
+      }))
+    },
+    removeTitle: () => {
+      set(() => ({
+        title: undefined,
+      }))
+    },
+    setHeaderHeight: (headerHeight) => {
+      set(() => ({
+        headerHeight,
+      }))
+    },
+    setBackAction: (action) => {
+      set(() => ({
+        backAction: action,
+      }))
+    },
+    executeBackAction: () => {
+      const { backAction } = get()
+      if (backAction) {
+        backAction()
+        set(() => ({
+          backAction: undefined,
+        }))
+      }
+    },
+  }))

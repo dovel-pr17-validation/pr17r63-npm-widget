@@ -1,0 +1,267 @@
+# @lifi/widget-checkout
+
+## 4.0.10
+
+### Patch Changes
+
+- [#912](https://github.com/lifinance/widget/pull/912) [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c) Thanks [@chybisov](https://github.com/chybisov)! - Update `i18next` to 26.5.2 and `react-i18next` to 17.1.0.
+
+- [#912](https://github.com/lifinance/widget/pull/912) [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c) Thanks [@chybisov](https://github.com/chybisov)! - Update `motion` to 14.4.0.
+
+- [#912](https://github.com/lifinance/widget/pull/912) [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c) Thanks [@chybisov](https://github.com/chybisov)! - Update `@tanstack/react-router` to 1.170.45.
+- Updated dependencies [[`897829d`](https://github.com/lifinance/widget/commit/897829d9652ea422ce25a9d4a266f509615180f4), [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c), [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c), [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c), [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c), [`24bcfd3`](https://github.com/lifinance/widget/commit/24bcfd318c48bf105244f644b5b86ec1cba43f6c)]:
+  - @lifi/widget@4.10.3
+  - @lifi/wallet-management@4.3.5
+  - @lifi/widget-provider-mesh@4.0.8
+
+## 4.0.9
+
+### Patch Changes
+
+- [#909](https://github.com/lifinance/widget/pull/909) [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd) Thanks [@chybisov](https://github.com/chybisov)! - Update `i18next` to 26.4.4.
+
+- [#909](https://github.com/lifinance/widget/pull/909) [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to 4.12.1. `fetchTxErrorDetails` now checks the transaction hash and the chain ID before it sends a request to Tenderly.
+
+- [#909](https://github.com/lifinance/widget/pull/909) [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd) Thanks [@chybisov](https://github.com/chybisov)! - Update `motion` to 14.1.0.
+
+- [#909](https://github.com/lifinance/widget/pull/909) [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd) Thanks [@chybisov](https://github.com/chybisov)! - Update `@mui/material`, `@mui/system` and `@mui/icons-material` to 9.5.0.
+
+- [#909](https://github.com/lifinance/widget/pull/909) [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd) Thanks [@chybisov](https://github.com/chybisov)! - Update `@tanstack/react-router` to 1.170.42.
+- Updated dependencies [[`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd), [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd), [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd), [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd), [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd), [`ba24a56`](https://github.com/lifinance/widget/commit/ba24a564b803b4960bf22529d1cb72bb2d35ecbd)]:
+  - @lifi/wallet-management@4.3.4
+  - @lifi/widget@4.10.2
+  - @lifi/widget-provider@4.6.2
+  - @lifi/widget-provider-mesh@4.0.7
+
+## 4.0.8
+
+### Patch Changes
+
+- [#903](https://github.com/lifinance/widget/pull/903) [`4458495`](https://github.com/lifinance/widget/commit/4458495061371d770ba48ff856cb0feecf0c6357) Thanks [@chybisov](https://github.com/chybisov)! - After a wallet rejects a batched swap and the page reloads, the failed route shows why it cannot continue. When the wallet has no record of a batched transaction, the failed route offers "Delete" and "Start a new swap". It does not offer "Try again", because "Try again" waits for the same transaction again. "Start a new swap" fills the form with the same swap. If the widget cannot start the same swap again, the failed route offers only "Delete".
+
+- [#903](https://github.com/lifinance/widget/pull/903) [`4458495`](https://github.com/lifinance/widget/commit/4458495061371d770ba48ff856cb0feecf0c6357) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to 4.12.0 and the LI.FI SDK providers to latest: `@lifi/sdk-provider-bitcoin` 4.1.1, `@lifi/sdk-provider-ethereum` 4.2.8, `@lifi/sdk-provider-solana` 4.3.5, `@lifi/sdk-provider-stellar` 4.3.9, `@lifi/sdk-provider-sui` 4.2.9, `@lifi/sdk-provider-tron` 4.1.8 and `@lifi/sdk-provider-zcash` 4.0.1. After a user rejects a batched swap in MetaMask, "Try again" asks for a new signature again.
+- Updated dependencies [[`8919674`](https://github.com/lifinance/widget/commit/89196746514ebb457139195aaed08a2ae8c38ed3), [`4458495`](https://github.com/lifinance/widget/commit/4458495061371d770ba48ff856cb0feecf0c6357), [`4458495`](https://github.com/lifinance/widget/commit/4458495061371d770ba48ff856cb0feecf0c6357)]:
+  - @lifi/widget@4.10.1
+  - @lifi/wallet-management@4.3.3
+  - @lifi/widget-provider@4.6.1
+  - @lifi/widget-provider-mesh@4.0.6
+
+## 4.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`7cff29f`](https://github.com/lifinance/widget/commit/7cff29ff627f162c0adb95f3f9fcb008101ba95b)]:
+  - @lifi/widget@4.10.0
+
+## 4.0.6
+
+### Patch Changes
+
+- [#896](https://github.com/lifinance/widget/pull/896) [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753) Thanks [@chybisov](https://github.com/chybisov)! - Update `react-i18next` to 17.0.16.
+
+- [#896](https://github.com/lifinance/widget/pull/896) [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to 4.11.0. A resumed route no longer signs a second transaction while the first one may still land.
+
+- [#896](https://github.com/lifinance/widget/pull/896) [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753) Thanks [@chybisov](https://github.com/chybisov)! - Update `motion` to 14.0.0.
+
+- [#896](https://github.com/lifinance/widget/pull/896) [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753) Thanks [@chybisov](https://github.com/chybisov)! - Update `@tanstack/react-router` to 1.170.41.
+
+- [#884](https://github.com/lifinance/widget/pull/884) [`97e59c5`](https://github.com/lifinance/widget/commit/97e59c58c719805198e030a14fbe72fabde010c8) Thanks [@chybisov](https://github.com/chybisov)! - ZEC is a destination-only chain. It never appears as a source chain or source token, and a `fromChain` of ZEC from the widget config or the URL is ignored. A ZEC receiver must be a transparent Zcash address (`t1…` or `t3…`) or a unified address (`u1…`) with an Orchard receiver; Sapling, TEX and other unified addresses get a message that names the accepted formats. The address inputs take up to 512 characters, so a unified address fits.
+  
+  Receivers are now checked against the destination chain, not only its chain type, so a Bitcoin address no longer passes as a ZEC receiver. A connected Bitcoin wallet is never filled in, offered, seeded or priced as a ZEC receiver, and a BTC → ZEC route asks for a receiver. Bookmarks of other ecosystems still save as before, and a Zcash bookmark shows the Zcash icon. The reverse and swap controls stay hidden while the destination chain is not allowed as a source by `chains.from`, so they never select a source chain the config excludes.
+  
+  `@lifi/widget-provider` exports `useAddressForChain`, which returns `isAddressForChain(address, chain)`, and the `ChainRef` and `IsAddressForChain` types. Every package that depends on the SDK requires the release whose `isAddress` accepts a chain ID, so a consumer keeps a single `@lifi/sdk`. The widget now passes the chain ID to each provider's `isAddress`, so upgrade the `@lifi/widget-provider-*` packages together with `@lifi/widget`: an older `@lifi/widget-provider-bitcoin` refuses every Bitcoin receiver and hides Bitcoin balances. `name` and `version` exported from `@lifi/widget` stay the widget's own now that `@lifi/sdk` exports the same names.
+- Updated dependencies [[`97e59c5`](https://github.com/lifinance/widget/commit/97e59c58c719805198e030a14fbe72fabde010c8), [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753), [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753), [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753), [`10d954a`](https://github.com/lifinance/widget/commit/10d954aaa9d4cc125c08045c0dd872d2549ec753), [`97e59c5`](https://github.com/lifinance/widget/commit/97e59c58c719805198e030a14fbe72fabde010c8), [`97e59c5`](https://github.com/lifinance/widget/commit/97e59c58c719805198e030a14fbe72fabde010c8)]:
+  - @lifi/widget@4.9.0
+  - @lifi/wallet-management@4.3.2
+  - @lifi/widget-provider@4.6.0
+  - @lifi/widget-provider-mesh@4.0.5
+
+## 4.0.5
+
+### Patch Changes
+
+- [#891](https://github.com/lifinance/widget/pull/891) [`0b3811c`](https://github.com/lifinance/widget/commit/0b3811ce2492b385219659632fd157b3b4923c57) Thanks [@chybisov](https://github.com/chybisov)! - Split `keyPrefix` into `storageScopeKey` and `queryScopeKey`, and publish shared
+  query options at `@lifi/widget/queries`.
+  
+  `keyPrefix` did two unrelated jobs: it named the widget's persisted stores in
+  `localStorage`, which belong to one widget instance, and it prefixed every
+  react-query key, which scopes data inside the host's `QueryClient`. One field
+  cannot have both granularities, so a host app and the widget could never share
+  server data such as chains and tools.
+  
+  - `storageScopeKey` namespaces persisted state — bookmarks, pinned tokens,
+    recent tokens, chain order and route history, the stores `keyPrefix` named.
+    Store names are unchanged, so moving a value from `keyPrefix` to
+    `storageScopeKey` keeps every user's saved data. Settings keep their one
+    shared name. It also scopes the widget's other queries.
+  - `queryScopeKey` scopes the chains and tools queries. Instances and a host app
+    that pass the same value share those entries.
+  - `keyPrefix` is deprecated and stays the fallback for both: nothing changes for
+    an integration that keeps using it. With neither set, the query scope defaults
+    to `'li.fi'`.
+  
+  `@lifi/widget/queries` exports `getChainsQueryOptions` and
+  `getToolsQueryOptions` (plus their key builders), following wagmi's
+  `@wagmi/core/query` convention: keys are `['chains', { apiUrl, chainTypes,
+  scopeKey }]` and `['tools', { apiUrl, scopeKey }]`, the `queryFn` reads its
+  parameters from the key, and caller behaviour (`staleTime`, `select`, …) goes in
+  `query` and never into the key. The subpath depends only on `@lifi/sdk` at
+  runtime, so a host can import it without loading the widget.
+  
+  The widget's chains and tools queries now use these factories. Their cache
+  entries hold the raw response; tools are narrowed per widget with `select`.
+  The widget's internal query keys are not public API, but an integration that
+  invalidated them by reconstructing the old `${keyPrefix}-widget-chains` string
+  must switch to `getChainsQueryKey` / `getToolsQueryKey`.
+  
+  `@lifi/widget-checkout` names its bookmarks store from the same storage scope,
+  and `@lifi/widget-light` accepts `storageScopeKey`.
+
+- [#891](https://github.com/lifinance/widget/pull/891) [`0b3811c`](https://github.com/lifinance/widget/commit/0b3811ce2492b385219659632fd157b3b4923c57) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to 4.10.0 and the chain providers together: `@lifi/sdk-provider-bitcoin` 4.0.15, `@lifi/sdk-provider-ethereum` 4.2.4, `@lifi/sdk-provider-solana` 4.3.1, `@lifi/sdk-provider-stellar` 4.3.5, `@lifi/sdk-provider-sui` 4.2.5 and `@lifi/sdk-provider-tron` 4.1.5. Concurrent `getChains` and `getTokens` calls from clients on different API bases no longer share one response, and a caller that aborts a shared request no longer fails the others. `WidgetConfig.sdkConfig.rpcUrls` also accepts per-role lists (`{ read, write, bundle }`); the Solana provider sends transactions and Jito bundles through them. A rejected Solana signature shows as `SignatureRejected` instead of `UnknownError`.
+- Updated dependencies [[`0b3811c`](https://github.com/lifinance/widget/commit/0b3811ce2492b385219659632fd157b3b4923c57), [`0b3811c`](https://github.com/lifinance/widget/commit/0b3811ce2492b385219659632fd157b3b4923c57), [`0b3811c`](https://github.com/lifinance/widget/commit/0b3811ce2492b385219659632fd157b3b4923c57)]:
+  - @lifi/widget@4.8.0
+  - @lifi/wallet-management@4.3.1
+  - @lifi/widget-provider@4.5.1
+  - @lifi/widget-provider-mesh@4.0.4
+
+## 4.0.4
+
+### Patch Changes
+
+- [#886](https://github.com/lifinance/widget/pull/886) [`8fa79be`](https://github.com/lifinance/widget/commit/8fa79be46522c18979b48ad328d3d7d6db7d298c) Thanks [@chybisov](https://github.com/chybisov)! - Only open or link explorer URLs that use `http:` or `https:`, and open explorer tabs with `noopener,noreferrer`.
+- Updated dependencies [[`8fa79be`](https://github.com/lifinance/widget/commit/8fa79be46522c18979b48ad328d3d7d6db7d298c)]:
+  - @lifi/widget@4.7.1
+
+## 4.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`1590c19`](https://github.com/lifinance/widget/commit/1590c1907376b800c556b139a10400fc301ca2cf), [`6cfb397`](https://github.com/lifinance/widget/commit/6cfb39765febba6251966d41cc9962e7d359812a), [`e9c695f`](https://github.com/lifinance/widget/commit/e9c695f9981d60bd23cff85d2c3324a739ebf0d7), [`2aa029b`](https://github.com/lifinance/widget/commit/2aa029bd0e26fdac4e96f6dd008350e36ecab79f), [`e9c695f`](https://github.com/lifinance/widget/commit/e9c695f9981d60bd23cff85d2c3324a739ebf0d7), [`6ca0991`](https://github.com/lifinance/widget/commit/6ca09911a49dda74d9450fad4a0732be789dac40), [`ae17ea7`](https://github.com/lifinance/widget/commit/ae17ea726c8cf277c3d7ebb9734c42dc3b682bc2), [`1526cf2`](https://github.com/lifinance/widget/commit/1526cf23815aaf788ff5fe2ff4a11b0d13c7602b), [`d1cbfab`](https://github.com/lifinance/widget/commit/d1cbfab97fd003d50e079b732493afc2e4eadbd7), [`6ca0991`](https://github.com/lifinance/widget/commit/6ca09911a49dda74d9450fad4a0732be789dac40), [`6ca0991`](https://github.com/lifinance/widget/commit/6ca09911a49dda74d9450fad4a0732be789dac40), [`e98e2d1`](https://github.com/lifinance/widget/commit/e98e2d101796c579f48e283d5e6c485229717781), [`57ae5ac`](https://github.com/lifinance/widget/commit/57ae5ac7cbdd86579e8546e31c96109308f92128), [`0bf9966`](https://github.com/lifinance/widget/commit/0bf9966a23a1a56e79d58e6e99f02df5b913688b), [`57ae5ac`](https://github.com/lifinance/widget/commit/57ae5ac7cbdd86579e8546e31c96109308f92128), [`0bf9966`](https://github.com/lifinance/widget/commit/0bf9966a23a1a56e79d58e6e99f02df5b913688b), [`0bf9966`](https://github.com/lifinance/widget/commit/0bf9966a23a1a56e79d58e6e99f02df5b913688b), [`57ae5ac`](https://github.com/lifinance/widget/commit/57ae5ac7cbdd86579e8546e31c96109308f92128), [`0bf9966`](https://github.com/lifinance/widget/commit/0bf9966a23a1a56e79d58e6e99f02df5b913688b), [`e9c695f`](https://github.com/lifinance/widget/commit/e9c695f9981d60bd23cff85d2c3324a739ebf0d7)]:
+  - @lifi/widget@4.7.0
+  - @lifi/widget-provider@4.5.0
+  - @lifi/wallet-management@4.3.0
+  - @lifi/widget-provider-mesh@4.0.3
+
+## 4.0.2
+
+### Patch Changes
+
+- [#827](https://github.com/lifinance/widget/pull/827) [`1d7bf36`](https://github.com/lifinance/widget/commit/1d7bf36f298db238e0402871a82488078da4b917) Thanks [@chybisov](https://github.com/chybisov)! - Keep the unsupported-receiver block consistent across the limit order and checkout flows, so a route that cannot honour a required receiver stays blocked everywhere.
+
+- [#827](https://github.com/lifinance/widget/pull/827) [`1d7bf36`](https://github.com/lifinance/widget/commit/1d7bf36f298db238e0402871a82488078da4b917) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to `^4.4.0` and each ecosystem SDK provider to its latest release.
+
+- [#847](https://github.com/lifinance/widget/pull/847) [`874158c`](https://github.com/lifinance/widget/commit/874158c47bcc83eb6a12317a56e57b4b0c3d29e7) Thanks [@chybisov](https://github.com/chybisov)! - Update runtime dependencies, including Motion 13, `@lifi/sdk` 4.4.0 and MUI 9.3.
+
+- [#847](https://github.com/lifinance/widget/pull/847) [`874158c`](https://github.com/lifinance/widget/commit/874158c47bcc83eb6a12317a56e57b4b0c3d29e7) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to `^4.6.0` and each `@lifi/sdk-provider-*` package to its latest release.
+
+- [#857](https://github.com/lifinance/widget/pull/857) [`2b290ab`](https://github.com/lifinance/widget/commit/2b290abb0fe9adb1ac5c1f6eb6fbb55e158fadea) Thanks [@chybisov](https://github.com/chybisov)! - Update `@lifi/sdk` to `^4.6.1` and each `@lifi/sdk-provider-*` package to its latest
+  release. Move `@creit.tech/stellar-wallets-kit` to `^2.6.0`, which requires
+  `@stellar/stellar-sdk` v17. No source change was needed. The widget never imports
+  `@stellar/stellar-sdk` directly, so the v17 renames and its switch from `Buffer` to
+  `Uint8Array` have no surface here.
+  
+  If you pin `@creit.tech/stellar-wallets-kit` yourself, move to `^2.6.0`. The kit keeps
+  wallet state in module level signals, so a second copy in the tree fails with "Please
+  set the wallet first".
+  
+  `@mysten/sui` moves to `^2.27.0` because `@lifi/sdk-provider-sui@4.1.10` requires it. A
+  lower range lets a fresh install resolve two copies, which breaks the Sui provider types.
+  
+  `@stellar/stellar-sdk` also drops from two copies to one. SWK `2.6.0` no longer pulls
+  `@trezor/connect-plugin-stellar`, which removes the subtree that asked for `14.2.0`, and
+  the remaining copy moves to `17.0.1`.
+
+- [#852](https://github.com/lifinance/widget/pull/852) [`a1cddf8`](https://github.com/lifinance/widget/commit/a1cddf8177523c6db54bd69f6c7e7b00af3314fc) Thanks [@chybisov](https://github.com/chybisov)! - Update runtime dependencies, including `i18next` 26.4, `react-i18next` 17.0.12, Motion 13.1.1 and TanStack Router 1.170.32.
+- Updated dependencies [[`1d7bf36`](https://github.com/lifinance/widget/commit/1d7bf36f298db238e0402871a82488078da4b917), [`1d7bf36`](https://github.com/lifinance/widget/commit/1d7bf36f298db238e0402871a82488078da4b917), [`6569207`](https://github.com/lifinance/widget/commit/6569207b1872706e53e53fe4ecc70f150c7103ae), [`1d7bf36`](https://github.com/lifinance/widget/commit/1d7bf36f298db238e0402871a82488078da4b917), [`e3709d0`](https://github.com/lifinance/widget/commit/e3709d0fc4bc2b8e848b1792f8b6321a2956008f), [`874158c`](https://github.com/lifinance/widget/commit/874158c47bcc83eb6a12317a56e57b4b0c3d29e7), [`2b290ab`](https://github.com/lifinance/widget/commit/2b290abb0fe9adb1ac5c1f6eb6fbb55e158fadea), [`e3709d0`](https://github.com/lifinance/widget/commit/e3709d0fc4bc2b8e848b1792f8b6321a2956008f), [`a5997eb`](https://github.com/lifinance/widget/commit/a5997ebf00df18cfe105d8390a437d7d853d780d), [`874158c`](https://github.com/lifinance/widget/commit/874158c47bcc83eb6a12317a56e57b4b0c3d29e7), [`2b290ab`](https://github.com/lifinance/widget/commit/2b290abb0fe9adb1ac5c1f6eb6fbb55e158fadea), [`a1cddf8`](https://github.com/lifinance/widget/commit/a1cddf8177523c6db54bd69f6c7e7b00af3314fc), [`a1cddf8`](https://github.com/lifinance/widget/commit/a1cddf8177523c6db54bd69f6c7e7b00af3314fc), [`874158c`](https://github.com/lifinance/widget/commit/874158c47bcc83eb6a12317a56e57b4b0c3d29e7), [`6569207`](https://github.com/lifinance/widget/commit/6569207b1872706e53e53fe4ecc70f150c7103ae)]:
+  - @lifi/widget@4.6.0
+  - @lifi/widget-provider@4.4.0
+  - @lifi/wallet-management@4.2.0
+  - @lifi/widget-provider-mesh@4.0.2
+
+## 4.0.1
+
+### Patch Changes
+
+- [#836](https://github.com/lifinance/widget/pull/836) [`676c5b4`](https://github.com/lifinance/widget/commit/676c5b4b0e763bb0c069f49ac6f5afeeacb5f617) Thanks [@chybisov](https://github.com/chybisov)! - chore: bump `@lifi/sdk` to `^4.3.0` and align duplicate-prone ranges
+
+  Move every package and example to `@lifi/sdk@^4.3.0` and refresh the
+  `@lifi/sdk-provider-*` ranges. `viem` and `@reown/appkit` ranges now match the
+  `pnpm-workspace.yaml` overrides (`>=2.52.0` / `>=1.8.20`) so consumers resolve a single
+  copy instead of a second one pulled in by a tighter caret range.
+
+- Updated dependencies [[`676c5b4`](https://github.com/lifinance/widget/commit/676c5b4b0e763bb0c069f49ac6f5afeeacb5f617), [`35741c6`](https://github.com/lifinance/widget/commit/35741c6a8fbf1cfc9b3239ec6a98e517fcf42c61)]:
+  - @lifi/widget@4.5.0
+  - @lifi/wallet-management@4.1.3
+  - @lifi/widget-provider@4.3.1
+  - @lifi/widget-provider-mesh@4.0.1
+
+## 4.0.0
+
+### Minor Changes
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Add quote-aware Transak checkout wiring by introducing onramp fiat-currencies and quote API contracts, extending onramp session payload/response fields, and carrying provider funding session metadata through checkout session state.
+
+  Switch checkout cash funding to a fiat-first flow with live quote-driven route amounts, dynamic fiat currencies/payment methods, and persisted funding session ids for resume/reconciliation paths.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Add the deposit/progress flow to checkout: transfer deposit page, progress page and deposit error pages, wired into the router.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Restrict checkout to EVM chains and tokens, and hide the native gas token in deposit flows.
+
+  Checkout now forces `chains.types` to EVM-only, so chain lists, token lists, route quotes, and wallet/recipient selection surface only EVM chains and their native + ERC20 tokens. The native gas token is hidden from source-token selection in the transfer/exchange/cash (Intent Factory) flows, which cannot accept it; the wallet flow keeps full token support.
+
+  `@lifi/widget`'s wallet menu now honors the `chains.types` allow/deny config, so a restricted ecosystem set only offers wallets for the allowed chain types.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Let users reconnect previously linked exchange accounts and set their own destination address in the checkout flow.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Auto-resume a single in-flight checkout deposit on the funding screen, abandon a transfer from the back button (with confirmation), and surface checkout-specific route-not-found copy. Add state-aware status step labels, fail resumed exchange records that lost their session, and hide the redundant token subtext under the cash pay field.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Add the `@lifi/widget-checkout` package scaffolding, providers, stores and the source/amount selection flow (select source, token and cash currency, enter amount, route selection).
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Fix wallet-flow resume to poll the correct status identifier and re-attach in-flight routes.
+
+  A resumed wallet payment now polls by the right identifier: relayer/gasless routes carry a `taskId`, which is distinct from a `txHash` in the SDK status API and was previously polled as a hash (so it never resolved). A still-executing wallet route is now resumed through the SDK on the transaction page, so it prompts for any remaining user action (a second source-chain signature, a destination-chain claim) instead of sitting on a status page it cannot advance. Routes evicted from the route store are re-seeded from the persisted snapshot before resuming.
+
+  `@lifi/widget` exports `isRouteActive`, `isRouteDone`, `isRouteFailed`, and the route-execution store accessors from `@lifi/widget/shared`.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Checkout: quote through the shared `useRoutes` engine, and replace auto-resume with a pending/failed deposit activity list.
+
+  - `useRoutes` gains an optional `quoteFromAddress` to quote before a wallet is connected (used as a non-signing placeholder), and no longer disables itself for custom deposit mode when it carries no contract calls. Checkout now delegates to `useRoutes` instead of a parallel implementation, correcting slippage, dynamic fee, and destination-ecosystem handling on walletless quotes.
+  - Checkout no longer deep-resumes on mount. It always opens on the funding screen and surfaces live pending/failed deposits as a tappable activity list, polling each by deposit address to reconcile done (cleared) and failed (kept, dismissible) states. Pending records are re-keyed by a stable per-deposit id so distinct deposits no longer collide.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Add the checkout transaction status, details and status-screen pages (execution status, step list, transfer details), completing the router.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Let the wallet checkout flow use any available route instead of only the Intent Factory route. Wallet payments now quote across all integrator-allowed exchanges, with activity tracking and resume falling back to tx-hash status polling when a route has no deposit address. The deposit-based flows (transfer, exchange, cash) keep their Intent Factory restriction.
+
+  In the wallet flow, the destination now defaults to the connected wallet (matching the destination ecosystem) when the integrator leaves the recipient user-settable, so users no longer have to fill in the "where to send it" field manually. The field stays editable, and a cross-ecosystem destination still falls back to manual entry.
+
+### Patch Changes
+
+- [#828](https://github.com/lifinance/widget/pull/828) [`1c6f5a2`](https://github.com/lifinance/widget/commit/1c6f5a235ec6347fd045c14d8cea4444c1e2eb84) Thanks [@chybisov](https://github.com/chybisov)! - chore: bump dependencies to their latest versions
+
+  Upgrade to TypeScript 7 and refresh runtime dependency ranges: `viem`, `@bigmi/*`, `i18next`, `react-i18next`, `react-intersection-observer`, `@mysten/sui`, `@meshconnect/web-link-sdk`, and the `@lifi/sdk-provider-*` packages. Aligns the `@bigmi/react` range across `@lifi/widget-provider-bitcoin` and `@lifi/widget-light` so a single `@bigmi/client` copy is resolved.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Harden the checkout deposit and status flows against errors and transient states.
+
+  - Latch the last real deposit-address status so a regressive `NOT_FOUND` (e.g. the simulation-failure to refund path) no longer collapses a refund or executing screen back to "watching".
+  - A resumed deposit with a deposit address keeps watching on `NOT_FOUND` instead of being dropped and bounced to amount entry: a just-started deposit that isn't indexed yet stays recoverable.
+  - Surface failed session, step-transaction, and status-poll calls as a retryable error screen (or a retry CTA) instead of stranding on a disabled button or an endless spinner.
+  - Cancelling an on-ramp provider pops the status entry instead of stacking a duplicate amount screen, so the first Back press is no longer a no-op.
+  - Deposit transfers always hand off to the status page by deposit address, never by a tx hash, so a refund can't land on a misleading tx-hash status that 404-loops.
+
+- [#817](https://github.com/lifinance/widget/pull/817) [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220) Thanks [@chybisov](https://github.com/chybisov)! - Polish the checkout flow and align it with the main widget design.
+
+  - Cards follow the widget's theme: receive/handoff cards use the shared border radius (so custom shapes like windows95 apply), the from/to token icons and labels line up, and the header back button aligns with page content.
+  - The refresh-quotes button now refetches, and the checkout route query keeps its previous result so amount/fee values update in place on refresh and on token/amount changes instead of flashing a skeleton or resetting to zero.
+  - Remove the funding-screen activity cards and stop surfacing the Mesh error on the choose-funding-source page.
+  - Reuse the widget's send-to-wallet card for the checkout recipient (gated read-only for fixed recipients), and reuse the shared step link styling on the status page.
+  - A quote with no deposit address is treated as unavailable instead of a silently disabled button, and going back from the amount screen no longer returns to the set-destination screen.
+  - Cash deposit card: move the disclaimer inside the card, smooth the expand animation, and tighten the amount-to-fees spacing.
+  - Show the Transak modal close button immediately, and prevent selecting the destination token as the source token.
+
+  `@lifi/widget` exposes `SendToWalletButton` (with optional `onEditAddress`/`onClearAddress` overrides and a `requireAddress` flag), `BookmarkStoreProvider`, and the step `ExternalLink` via `@lifi/widget/shared`, and `useRoutes` gains an opt-in `keepPreviousData`.
+
+- Updated dependencies [[`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`1c6f5a2`](https://github.com/lifinance/widget/commit/1c6f5a235ec6347fd045c14d8cea4444c1e2eb84), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220), [`682e043`](https://github.com/lifinance/widget/commit/682e0430644efc6f4463cb5e016f7f2f21078220)]:
+  - @lifi/widget-provider@4.3.0
+  - @lifi/widget-provider-mesh@4.0.0
+  - @lifi/widget@4.4.0
+  - @lifi/wallet-management@4.1.2

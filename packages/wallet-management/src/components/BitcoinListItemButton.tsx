@@ -1,0 +1,81 @@
+import { ChainId, ChainType } from '@lifi/sdk'
+import { useBitcoinContext } from '@lifi/widget-provider'
+import type { JSX } from 'react'
+import { useLastConnectedAccount } from '../hooks/useAccount.js'
+import { useWalletManagementEvents } from '../hooks/useWalletManagementEvents.js'
+import { getChainTypeIcon } from '../icons.js'
+import { WalletManagementEvent } from '../types/events.js'
+import { WalletTagType } from '../types/walletTagType.js'
+import { getConnectorIcon } from '../utils/getConnectorIcon.js'
+import { CardListItemButton } from './CardListItemButton.js'
+import type { WalletListItemButtonProps } from './types.js'
+
+export const BitcoinListItemButton = ({
+  ecosystemSelection,
+  connector,
+  tagType,
+  onConnected,
+  onConnecting,
+  onError,
+}: WalletListItemButtonProps): JSX.Element => {
+  const emitter = useWalletManagementEvents()
+  const { connect, disconnect, isConnected } = useBitcoinContext()
+  const { setLastConnectedAccount } = useLastConnectedAccount()
+
+  const connectorDisplayName: string = ecosystemSelection
+    ? 'Bitcoin'
+    : connector.name
+
+  const handleBitcoinConnect = async () => {
+    if (tagType === WalletTagType.Connected) {
+      onConnected?.()
+      return
+    }
+
+    try {
+      onConnecting?.()
+      if (isConnected) {
+        await disconnect()
+      }
+      let didConnect = false
+      await connect(connector.id ?? connector.name, (address: string) => {
+        didConnect = true
+        setLastConnectedAccount(connector)
+        emitter.emit(WalletManagementEvent.WalletConnected, {
+          address: address,
+          chainId: ChainId.BTC,
+          chainType: ChainType.UTXO,
+          connectorId: connector.id ?? connector.name,
+          connectorName: connector.name,
+        })
+      })
+      // Closing the menu without a connection would report success for a wallet
+      // that never returned an address.
+      if (didConnect) {
+        onConnected?.()
+      } else {
+        onError?.(new Error('Wallet did not return an address.'))
+      }
+    } catch (error) {
+      onError?.(error)
+    }
+  }
+
+  return (
+    <CardListItemButton
+      key={connector.id}
+      icon={
+        ecosystemSelection
+          ? (getChainTypeIcon(ChainType.UTXO) ?? '')
+          : (getConnectorIcon(connector) ?? '')
+      }
+      onClick={handleBitcoinConnect}
+      title={connectorDisplayName}
+      tagType={
+        ecosystemSelection && tagType !== WalletTagType.Connected
+          ? undefined
+          : tagType
+      }
+    />
+  )
+}

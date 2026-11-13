@@ -1,0 +1,80 @@
+import { Box, type Theme, useMediaQuery } from '@mui/material'
+import type { FC } from 'react'
+import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ChainSelect } from '../../components/ChainSelect/ChainSelect.js'
+import { PageContainer } from '../../components/PageContainer.js'
+import { TokenList } from '../../components/TokenList/TokenList.js'
+import { useHeader } from '../../hooks/useHeader.js'
+import { useSwapOnly } from '../../hooks/useSwapOnly.js'
+import { useWideVariant } from '../../hooks/useWideVariant.js'
+import { useWidgetConfig } from '../../providers/WidgetProvider/WidgetProvider.js'
+import type { FormTypeProps } from '../../stores/form/types.js'
+import { SearchTokenInput } from './SearchTokenInput.js'
+
+export const SelectTokenPage: FC<FormTypeProps> = ({ formType }) => {
+  const headerRef = useRef<HTMLElement>(null)
+
+  const swapOnly = useSwapOnly()
+
+  const { mode, hiddenUI } = useWidgetConfig()
+  const wideVariant = useWideVariant()
+
+  const { t } = useTranslation()
+  const title =
+    formType === 'from'
+      ? mode === 'custom'
+        ? t('header.payWith')
+        : t('header.from')
+      : t('header.to')
+
+  useHeader(title)
+
+  const hideChainSelect =
+    (wideVariant && !hiddenUI?.chainSidebar) ||
+    (swapOnly && formType === 'to') ||
+    hiddenUI?.chainSelect
+
+  const isMobile = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.down(theme.breakpoints.values.xs)
+  )
+  const hideSearchTokenInput = hiddenUI?.searchTokenInput
+
+  const hasHeader = !hideChainSelect || !hideSearchTokenInput
+
+  return (
+    <PageContainer disableGutters>
+      <Box
+        ref={headerRef}
+        sx={{
+          pt: 1.5,
+          pb: hasHeader ? 2 : 0,
+          px: 3,
+        }}
+      >
+        {!hideChainSelect ? <ChainSelect formType={formType} /> : null}
+        {!hideSearchTokenInput && (
+          <Box
+            sx={{
+              mt: !hideChainSelect ? 2 : 0,
+            }}
+          >
+            <SearchTokenInput formType={formType} />
+          </Box>
+        )}
+      </Box>
+      <TokenList
+        // Rerender component if variant changes (since chains tiles change height)
+        key={
+          hideChainSelect
+            ? 'without-offset'
+            : isMobile
+              ? 'with-offset-mobile'
+              : 'with-offset'
+        }
+        headerRef={headerRef}
+        formType={formType}
+      />
+    </PageContainer>
+  )
+}

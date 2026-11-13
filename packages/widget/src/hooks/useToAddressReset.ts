@@ -1,0 +1,48 @@
+import type { ExtendedChain } from '@lifi/sdk'
+import { useAddressForChain } from '@lifi/widget-provider'
+import { useCallback } from 'react'
+import { useWidgetConfig } from '../providers/WidgetProvider/WidgetProvider.js'
+import { useBookmarkActions } from '../stores/bookmarks/useBookmarkActions.js'
+import { useBookmarks } from '../stores/bookmarks/useBookmarks.js'
+import { useFieldActions } from '../stores/form/useFieldActions.js'
+
+export const useToAddressReset = (): {
+  tryResetToAddress: (toChain: ExtendedChain) => void
+} => {
+  const { requiredUI } = useWidgetConfig()
+  const { setFieldValue } = useFieldActions()
+  const { selectedBookmark } = useBookmarks()
+  const { setSelectedBookmark } = useBookmarkActions()
+  const { isAddressForChain } = useAddressForChain()
+
+  const tryResetToAddress = useCallback(
+    (toChain: ExtendedChain) => {
+      const requiredToAddress = requiredUI?.toAddress
+
+      const bookmarkSatisfiesToChain = Boolean(
+        selectedBookmark && isAddressForChain(selectedBookmark.address, toChain)
+      )
+
+      const shouldResetToAddress =
+        !requiredToAddress && !bookmarkSatisfiesToChain
+
+      // We reset toAddress on each chain change if it's no longer required, ensuring that
+      // switching chain types doesn't leave a stale toAddress from a different ecosystem.
+      if (shouldResetToAddress) {
+        setFieldValue('toAddress', '', { isTouched: true })
+        setSelectedBookmark()
+      }
+    },
+    [
+      setFieldValue,
+      setSelectedBookmark,
+      requiredUI,
+      selectedBookmark,
+      isAddressForChain,
+    ]
+  )
+
+  return {
+    tryResetToAddress,
+  }
+}

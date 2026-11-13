@@ -1,0 +1,22 @@
+{
+  "title": {
+    "connecting": "Conectando",
+    "selectWallet": "Seleccionar billetera",
+    "selectWalletWithChain": "Seleccionar billetera de {{chainLabel}}",
+    "selectEcosystem": "Seleccionar ecosistema",
+    "waitingForWallet": "Esperando a {{walletName}}",
+    "availableWalletsNotFound": "No se encontraron billeteras disponibles"
+  },
+  "message": {
+    "connecting": "Haz clic en Conectar en la ventana emergente de tu billetera. ¿No ves tu billetera? Revisa las otras ventanas de tu navegador.",
+    "multipleEcosystems": "{{walletName}} admite varios ecosistemas de cadenas. Selecciona a cuál quieres conectarte.",
+    "availableWalletsNotFound": "No se detectaron extensiones de billetera compatibles. Instala una billetera compatible y actualiza la página. Si ya está instalada, asegúrate de que esté activada y sea compatible, o ponte en contacto con soporte."
+  },
+  "tags": {
+    "connected": "Conectada",
+    "multichain": "Multicadena",
+    "installed": "Instalada",
+    "qrCode": "Código QR",
+    "getStarted": "Comenzar"
+  }
+}

@@ -1,0 +1,345 @@
+import type {
+  BaseToken,
+  ExtendedChain,
+  RouteExtended,
+  StaticToken,
+  Token,
+  TokenAmount,
+  TokenExtended,
+} from '@lifi/sdk'
+import { ChainId } from '@lifi/sdk'
+import type { FormType } from '../stores/form/types.js'
+import type { TokensByChain, TokenWithFlags } from '../types/token.js'
+import type {
+  AllowDenySets,
+  WidgetChains,
+  WidgetTokens,
+} from '../types/widget.js'
+import { getConfigItemSets, isFormItemAllowed } from './item.js'
+
+// Number(): plain-JS integrators may pass chainId as a string.
+export const getChainTokenAllowSets = (
+  configTokens: WidgetTokens | undefined,
+  chainId: number,
+  formType?: FormType
+): AllowDenySets | undefined =>
+  getConfigItemSets(
+    configTokens,
+    (tokens: BaseToken[]) =>
+      new Set(
+        tokens
+          .filter((t) => Number(t.chainId) === chainId)
+          .map((t) => t.address.toLowerCase())
+      ),
+    formType
+  )
+
+/**
+ * Builds per-chain sets of lowercase token addresses from the
+ * `tokens.verified` config allowlist.
+ */
+export const getVerifiedTokensSets = (
+  configTokens?: WidgetTokens
+): Map<number, Set<string>> | undefined => {
+  if (!configTokens?.verified?.length) {
+    return undefined
+  }
+  const sets = new Map<number, Set<string>>()
+  for (const token of configTokens.verified) {
+    const chainId = Number(token.chainId)
+    let addresses = sets.get(chainId)
+    if (!addresses) {
+      addresses = new Set()
+      sets.set(chainId, addresses)
+    }
+    addresses.add(token.address.toLowerCase())
+  }
+  return sets
+}
+
+/**
+ * Merges verified tokens with search tokens.
+ * Verified tokens take priority - search tokens are only added if they don't already exist.
+ */
+export const mergeVerifiedWithSearchTokens = (
+  verifiedTokens?: TokensByChain,
+  searchTokens?: TokensByChain
+): TokensByChain | undefined => {
+  if (!verifiedTokens) {
+    return searchTokens
+  }
+  if (!searchTokens) {
+    return verifiedTokens
+  }
+
+  const result = { ...verifiedTokens }
+
+  for (const [chainId, tokens] of Object.entries(searchTokens)) {
+    const chainIdNum = Number(chainId)
+    const existingTokens = result[chainIdNum] || []
+    const existingAddresses = new Set(
+      existingTokens.map((t) => t.address.toLowerCase())
+    )
+
+    const newTokens = tokens.filter(
+      (t) => !existingAddresses.has(t.address.toLowerCase())
+    )
+
+    if (newTokens.length) {
+      result[chainIdNum] = [...existingTokens, ...newTokens]
+    }
+  }
+
+  return result
+}
+
+/**
+ * `priceUSD` is a required string, so an unknown price arrives as `'0'` or `''`
+ * rather than as an absent key — the same reading as in `useLimitMarketRate`. A
+ * known price must never lose to one, or a route that cannot price its output
+ * blanks a value the cache already knew.
+ */
+export const knownPriceUSD = (fresher: string, cached: string): string =>
+  Number(fresher) ? fresher : cached
+
+/**
+ * Merges a cached token into a route token for display. The route wins on every
+ * field it carries; the cache only fills gaps. Letting the cache win instead
+ * swaps the quoted price for a stale feed price.
+ */
+export const mergeFallbackToken = (
+  routeToken: TokenAmount,
+  cachedToken: TokenExtended | undefined
+): TokenAmount =>
+  cachedToken
+    ? {
+        ...cachedToken,
+        ...routeToken,
+        priceUSD: knownPriceUSD(routeToken.priceUSD, cachedToken.priceUSD),
+        logoURI: routeToken.logoURI || cachedToken.logoURI,
+      }
+    : routeToken
+
+/**
+ * Updates a token in the cache by chainId and address.
+ * Returns a new cache object with the token updated, or the original if not found.
+ * Addresses are compared case-insensitively: the token list and the route can
+ * spell the same address differently. The incoming token only overwrites what it
+ * actually knows, so an unpriced or logo-less route cannot blank the cache.
+ */
+export const updateTokenInCache = (
+  data: TokensByChain | undefined,
+  token: Token
+): TokensByChain | undefined => {
+  if (!data) {
+    return data
+  }
+  const chainTokens = data[token.chainId]
+  if (!chainTokens) {
+    return data
+  }
+  const address = token.address.toLowerCase()
+  const index = chainTokens.findIndex(
+    (t) => t.address.toLowerCase() === address
+  )
+  if (index < 0) {
+    return data
+  }
+  return {
+    ...data,
+    [token.chainId]: chainTokens.map((t, i) =>
+      i === index
+        ? {
+            ...t,
+            ...token,
+            // Keep the cached address: other readers hold it as the identity.
+            address: t.address,
+            priceUSD: knownPriceUSD(token.priceUSD, t.priceUSD),
+            logoURI: token.logoURI || t.logoURI,
+          }
+        : t
+    ),
+  }
+}
+
+export const filterAllowedTokens = (
+  dataTokens: TokensByChain | undefined,
+  configTokens?: WidgetTokens,
+  chainsConfig?: WidgetChains,
+  formType?: FormType,
+  nativeTokenAddresses?: Map<number, string>
+): TokensByChain | undefined => {
+  if (!dataTokens) {
+    return
+  }
+
+  const includedTokens = configTokens?.include || []
+  const allChainIds = Array.from(
+    new Set([
+      ...includedTokens.map((t) => t.chainId),
+      ...Object.keys(dataTokens),
+    ])
+  ).map((chainId) => Number(chainId))
+
+  const configChainIdsSet = getConfigItemSets(
+    chainsConfig,
+    (chainIds: number[]) => new Set(chainIds),
+    formType
+  )
+
+  const allowedChainIds = configChainIdsSet
+    ? allChainIds.filter((chainId) =>
+        isFormItemAllowed(chainId, configChainIdsSet, formType)
+      )
+    : allChainIds
+
+  const verifiedTokensSets = getVerifiedTokensSets(configTokens)
+
+  const allowedTokensByChain: TokensByChain = {}
+  for (const chainId of allowedChainIds) {
+    const chainIncludedTokens = includedTokens.filter(
+      (t) => Number(t.chainId) === chainId
+    )
+    const includedAddresses = new Set(
+      chainIncludedTokens.map((t) => t.address.toLowerCase())
+    )
+
+    const allowedAddresses = getChainTokenAllowSets(
+      configTokens,
+      chainId,
+      formType
+    )
+
+    const verifiedAddresses = verifiedTokensSets?.get(chainId)
+    const nativeAddress = nativeTokenAddresses?.get(chainId)?.toLowerCase()
+
+    const chainTokens: TokenWithFlags[] = [
+      ...(dataTokens[chainId] ?? []),
+      ...chainIncludedTokens,
+    ]
+
+    const filtered: TokenWithFlags[] = []
+    const seenAddresses = new Set<string>()
+    for (const token of chainTokens) {
+      const address = token.address.toLowerCase()
+      // Data tokens come first and win over include duplicates,
+      // keeping their extended data
+      if (seenAddresses.has(address)) {
+        continue
+      }
+      seenAddresses.add(address)
+      if (
+        !isFormItemAllowed(token, allowedAddresses, formType, (t) =>
+          t.address.toLowerCase()
+        )
+      ) {
+        continue
+      }
+      // Include and verified-allowlist tokens are explicitly set by the
+      // integrator, mark them as verified. Flags are only ever set to true,
+      // so a token that earns none keeps its cached object.
+      const markVerified =
+        !token.verified &&
+        (includedAddresses.has(address) || verifiedAddresses?.has(address))
+      const markNative = !!nativeAddress && nativeAddress === address
+      if (markVerified || markNative) {
+        filtered.push({
+          ...token,
+          ...(markVerified ? { verified: true } : {}),
+          ...(markNative ? { native: true } : {}),
+        })
+      } else {
+        filtered.push(token)
+      }
+    }
+
+    allowedTokensByChain[chainId] = filtered
+  }
+
+  return allowedTokensByChain
+}
+
+export const getExecutionToToken = (route: RouteExtended): TokenAmount => ({
+  ...(route.steps.at(-1)?.execution?.toToken ?? route.toToken),
+  amount: BigInt(
+    route.steps.at(-1)?.execution?.toAmount ??
+      route.steps.at(-1)?.estimate.toAmount ??
+      route.toAmount
+  ),
+})
+
+/** Capitalized name of the first provider that verified the token. */
+export const getTokenVerificationProvider = (
+  token: Pick<StaticToken, 'verificationStatusBreakdown'>
+): string | undefined => {
+  const provider = token.verificationStatusBreakdown?.find(
+    (entry) => entry.result === 'verified'
+  )?.provider
+  return provider
+    ? `${provider.charAt(0).toUpperCase()}${provider.slice(1)}`
+    : undefined
+}
+
+export type TokenVerificationBadge =
+  | 'native'
+  | 'flagged'
+  | 'verified'
+  | 'unverifiedByProvider'
+  | 'unverified'
+
+export const getTokenVerificationBadge = (
+  token: Pick<
+    TokenWithFlags,
+    'native' | 'listed' | 'verified' | 'verificationStatus'
+  >
+): TokenVerificationBadge | undefined => {
+  // The provider calls the native-address convention a scam on some chains.
+  if (token.native) {
+    return 'native'
+  }
+  if (token.verificationStatus === 'flagged') {
+    return 'flagged'
+  }
+  if (token.verificationStatus === 'verified') {
+    return 'verified'
+  }
+  if (token.listed || token.verified) {
+    return undefined
+  }
+  return token.verificationStatus === 'unverified'
+    ? 'unverifiedByProvider'
+    : 'unverified'
+}
+
+export type TokenStatusTextKey =
+  | 'tokenMetric.statusVerified'
+  | 'tokenMetric.statusFlagged'
+  | 'tokenMetric.statusUnverified'
+
+export const getTokenStatusTextKey = (
+  token: Pick<TokenWithFlags, 'native' | 'verificationStatus'>
+): TokenStatusTextKey => {
+  if (token.verificationStatus === 'verified') {
+    return 'tokenMetric.statusVerified'
+  }
+  if (token.verificationStatus === 'flagged' && !token.native) {
+    return 'tokenMetric.statusFlagged'
+  }
+  return 'tokenMetric.statusUnverified'
+}
+
+/**
+ * Hyperliquid declares Arbitrum USDC as its native token, Lighter declares
+ * Ethereum USDC. Neither is a gas token you hold there. A chain-local
+ * stablecoin gas token, as on Arc or Stable, is genuine and stays.
+ */
+const chainIdsWithoutNativeToken = new Set([ChainId.HPL, ChainId.LTR])
+
+export const getNativeTokenAddresses = (
+  chains?: ExtendedChain[]
+): Map<number, string> =>
+  new Map(
+    chains
+      ?.filter((chain) => !chainIdsWithoutNativeToken.has(chain.id))
+      .map((chain) => [chain.id, chain.nativeToken.address])
+  )

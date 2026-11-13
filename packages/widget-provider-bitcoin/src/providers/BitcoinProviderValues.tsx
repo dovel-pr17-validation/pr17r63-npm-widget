@@ -1,0 +1,149 @@
+import {
+  connect,
+  type Connector,
+  disconnect,
+  getConnectorClient as getBigmiConnectorClient,
+} from '@bigmi/client'
+import { useAccount, useConfig, useConnect } from '@bigmi/react'
+import { ChainId, ChainType } from '@lifi/sdk'
+import { BitcoinProvider as BitcoinSDKProvider } from '@lifi/sdk-provider-bitcoin'
+import { BitcoinContext } from '@lifi/widget-provider'
+import {
+  type FC,
+  type PropsWithChildren,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import type { BitcoinProviderConfig } from '../types'
+import { disconnectAll } from '../utils/disconnectAll.js'
+import {
+  getInstalledConnectors,
+  sameConnectors,
+} from '../utils/getInstalledConnectors.js'
+
+interface BitcoinProviderValuesProps {
+  isExternalContext: boolean
+  config?: BitcoinProviderConfig
+}
+
+export const BitcoinProviderValues: FC<
+  PropsWithChildren<BitcoinProviderValuesProps>
+> = ({ children, isExternalContext, config }) => {
+  const bigmiConfig = useConfig()
+  const { connectors } = useConnect()
+  const currentWallet = useAccount()
+
+  const account = useMemo(
+    () => ({
+      ...currentWallet,
+      chainType: ChainType.UTXO,
+      chainId: ChainId.BTC,
+      address: currentWallet.account?.address,
+      addresses: currentWallet.accounts?.map((account) => account.address),
+    }),
+    [currentWallet]
+  )
+
+  const isConnected = account.isConnected
+
+  const sdkProvider = useMemo(() => {
+    const getWalletClient = () => getBigmiConnectorClient(bigmiConfig)
+    if (typeof config?.sdkProvider === 'function') {
+      return config.sdkProvider({ getWalletClient })
+    }
+    return config?.sdkProvider ?? BitcoinSDKProvider({ getWalletClient })
+    // oxlint-disable-next-line react/exhaustive-deps -- of the fields of `config`, the memo reads only `sdkProvider`; it calls `config.sdkProvider(...)` as a method to keep `this`
+  }, [bigmiConfig, config?.sdkProvider])
+
+  const [installedWallets, setInstalledWallets] = useState<Connector[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    // Every Wallet Standard wallet announces itself, so probes overlap. Only
+    // the newest may write, or a slower earlier one could restore a list that
+    // predates the registration which triggered it.
+    let latest = 0
+    const probe = () => {
+      const sequence = ++latest
+      getInstalledConnectors(connectors as readonly Connector[]).then(
+        (installed) => {
+          if (cancelled || sequence !== latest) {
+            return
+          }
+          setInstalledWallets((current) =>
+            sameConnectors(current, installed) ? current : installed
+          )
+        }
+      )
+    }
+    probe()
+    // MetaMask announces Bitcoin through the Wallet Standard registry rather
+    // than by injecting into `window`, so it can arrive after this mounts.
+    window.addEventListener('wallet-standard:register-wallet', probe)
+    // The `window` injectors announce nothing, so an extension enabled or
+    // installed without a reload would stay hidden for the session.
+    window.addEventListener('visibilitychange', probe)
+    window.addEventListener('focus', probe)
+    return () => {
+      cancelled = true
+      window.removeEventListener('wallet-standard:register-wallet', probe)
+      window.removeEventListener('visibilitychange', probe)
+      window.removeEventListener('focus', probe)
+    }
+  }, [connectors])
+
+  const handleConnect = useCallback(
+    async (
+      connectorIdOrName: string,
+      onSuccess?: (address: string, chainId: number) => void
+    ) => {
+      const connector = connectors.find(
+        (connector) => (connector.id ?? connector.name) === connectorIdOrName
+      )
+      if (connector) {
+        const data = await connect(bigmiConfig, {
+          connector: connector as Connector,
+        })
+        if (data.accounts.length > 0) {
+          onSuccess?.(data.accounts[0].address, ChainId.BTC)
+        }
+      }
+    },
+    [bigmiConfig, connectors]
+  )
+
+  const handleDisconnect = useCallback(async () => {
+    await disconnectAll(
+      [...bigmiConfig.state.connections.values()].map(
+        (connection) => connection.connector
+      ),
+      (connector) => disconnect(bigmiConfig, { connector })
+    )
+  }, [bigmiConfig])
+
+  const contextValue = useMemo(
+    () => ({
+      isEnabled: true,
+      account,
+      sdkProvider,
+      installedWallets,
+      isConnected,
+      isExternalContext,
+      connect: handleConnect,
+      disconnect: handleDisconnect,
+    }),
+    [
+      account,
+      sdkProvider,
+      installedWallets,
+      isConnected,
+      isExternalContext,
+      handleConnect,
+      handleDisconnect,
+    ]
+  )
+
+  return <BitcoinContext value={contextValue}>{children}</BitcoinContext>
+}

@@ -1,0 +1,28 @@
+name: Deploy Widget to S3
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Dispatch site to deploy
+        env:
+          TOKEN: ${{ secrets.WIDGET_DEPLOY_TOKEN }}
+          DISPATCH_URL: ${{ secrets.WIDGET_DEPLOY_DISPATCH_URL }}
+          SHA: ${{ github.sha }}
+        run: |
+          curl --fail --silent --show-error -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$DISPATCH_URL" \
+            -d "{\"event_type\":\"widget-main-pushed\",\"client_payload\":{\"sha\":\"$SHA\"}}"

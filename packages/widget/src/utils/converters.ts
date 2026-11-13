@@ -1,0 +1,259 @@
+import type {
+  ExecutionAction,
+  ExecutionActionStatus,
+  ExtendedChain,
+  ExtendedTransactionInfo,
+  FeeCost,
+  FullStatusData,
+  Substatus,
+  TokenAmount,
+  ToolsResponse,
+} from '@lifi/sdk'
+import type { RouteExecution } from '../stores/routes/types.js'
+import { formatTokenPrice, parseAmountToBigInt } from './format.js'
+
+const buildActionsFromTxHistory = (tx: FullStatusData): ExecutionAction[] => {
+  const sending = tx.sending as ExtendedTransactionInfo
+  const receiving = tx.receiving as ExtendedTransactionInfo
+
+  if (!sending.token?.chainId || !receiving.token?.chainId) {
+    return []
+  }
+
+  const actionStatus: ExecutionActionStatus =
+    tx.status === 'DONE' ? 'DONE' : 'FAILED'
+  const substatus: Substatus =
+    actionStatus === 'FAILED' ? 'UNKNOWN_ERROR' : 'COMPLETED'
+
+  if (sending.chainId === receiving.chainId) {
+    return [
+      {
+        type: 'SWAP', // operations on same chain will be swaps
+        message: '',
+        status: actionStatus,
+        chainId: sending.chainId,
+        txHash: sending.txHash,
+        txLink: sending.txLink,
+        substatus,
+        substatusMessage: '',
+      },
+    ]
+  }
+
+  const actions: ExecutionAction[] = [
+    {
+      type: 'CROSS_CHAIN', // first step of bridging, ignoring the approvals
+      message: '',
+      status: actionStatus, // can be FAILED
+      chainId: sending.chainId,
+      txHash: sending.txHash,
+      txLink: sending.txLink,
+    },
+    {
+      type: 'RECEIVING_CHAIN', // final step of bridging, post swaps
+      message: '',
+      status: actionStatus,
+      substatus,
+      substatusMessage: '',
+      chainId: receiving.chainId,
+      txHash: receiving.txHash,
+      txLink: receiving.txLink,
+    },
+  ]
+
+  return actions
+}
+
+const isValidFeeCost = (feeCost: FeeCost): boolean =>
+  Boolean(feeCost.token) && parseAmountToBigInt(feeCost.amount) > 0n
+
+const buildFeeCostsFromTxHistory = (
+  tx: FullStatusData,
+  fromChain?: ExtendedChain
+): FeeCost[] | undefined => {
+  const feeCosts = tx.feeCosts?.filter(isValidFeeCost)
+  if (feeCosts?.some((feeCost) => feeCost.included === false)) {
+    return feeCosts
+  }
+
+  // These chains report value in native decimals, so it holds the sent amount
+  if (fromChain?.nonStandardNativeDecimals) {
+    return
+  }
+
+  const sending = tx.sending as ExtendedTransactionInfo
+  const sendingValue = parseAmountToBigInt(sending.value)
+  const sendingFeeAmount =
+    sending.gasToken.address === sending.token?.address && sending.amount
+      ? sendingValue - parseAmountToBigInt(sending.amount)
+      : sendingValue
+
+  if (sendingFeeAmount <= 0n) {
+    return
+  }
+
+  return [
+    {
+      amount: sendingFeeAmount.toString(),
+      amountUSD: formatTokenPrice(
+        sendingFeeAmount,
+        sending.gasToken.priceUSD,
+        sending.gasToken.decimals
+      ).toFixed(2),
+      token: sending.gasToken,
+      included: false,
+      // Not used
+      description: '',
+      name: '',
+      percentage: '',
+    },
+  ]
+}
+
+export const buildRouteFromTxHistory = (
+  tx: FullStatusData,
+  tools?: ToolsResponse,
+  fromChain?: ExtendedChain
+): RouteExecution | undefined => {
+  const sending = tx.sending as ExtendedTransactionInfo
+  const receiving = tx.receiving as ExtendedTransactionInfo
+
+  if (!sending.token?.chainId || !receiving.token?.chainId) {
+    return
+  }
+
+  let usedTool = tx.sending.includedSteps?.find(
+    (step) => step.toolDetails.key === tx.tool
+  )?.toolDetails
+
+  if (!usedTool) {
+    const selectedBridge = tools?.bridges.find(
+      (bridge) => bridge.key === tx.tool
+    )
+
+    const selectedExchange = tools?.exchanges.find(
+      (exchange) => exchange.key === tx.tool
+    )
+    usedTool = {
+      key: tx.tool,
+      name: selectedBridge?.name ?? selectedExchange?.name ?? tx.tool,
+      logoURI: selectedBridge?.logoURI ?? selectedExchange?.logoURI ?? '',
+    }
+  }
+
+  const fromToken: TokenAmount = {
+    ...sending.token,
+    amount: BigInt(sending.amount ?? 0),
+  }
+
+  const toToken: TokenAmount = {
+    ...receiving.token,
+    amount: BigInt(receiving.amount ?? 0),
+  }
+
+  const feeCosts = buildFeeCostsFromTxHistory(tx, fromChain)
+
+  const routeExecution: RouteExecution = {
+    status: 1,
+    route: {
+      id: (tx as FullStatusData).transactionId,
+      fromAddress: (tx as FullStatusData).fromAddress,
+      toAddress: (tx as FullStatusData).toAddress,
+      fromChainId: sending.chainId,
+      fromAmount: sending.amount ?? '',
+      fromAmountUSD: sending.amountUSD ?? '',
+      toAmount: receiving.amount ?? '',
+      toAmountMin: receiving.amount ?? '',
+      toAmountUSD: receiving.amountUSD ?? '',
+      toChainId: receiving.chainId,
+      fromToken,
+      toToken,
+      gasCostUSD: sending.gasAmountUSD,
+      steps: [
+        {
+          id: (tx as FullStatusData).transactionId,
+          type: 'lifi',
+          tool: tx.tool,
+          toolDetails: usedTool,
+          action: {
+            fromToken: sending.token,
+            fromAmount: sending.amount ?? '',
+            fromChainId: sending.chainId,
+            fromAddress: (tx as FullStatusData).fromAddress,
+            toToken: receiving.token,
+            toChainId: receiving.chainId,
+            toAddress: (tx as FullStatusData).toAddress,
+            slippage: 0,
+          },
+          estimate: {
+            tool: tx.tool,
+            approvalAddress: '',
+            fromAmount: sending.amount ?? '',
+            fromAmountUSD: sending.amountUSD ?? '',
+            toAmountMin: receiving.amount ?? '',
+            toAmount: receiving.amount ?? '',
+            toAmountUSD: receiving.amountUSD ?? '',
+            executionDuration: 0,
+          },
+          includedSteps: [
+            {
+              id: (tx as FullStatusData).transactionId,
+              type: sending.chainId === receiving.chainId ? 'swap' : 'cross',
+              action: {
+                fromChainId: sending.chainId,
+                fromAmount: sending.amount ?? '',
+                fromToken: sending.token,
+                toChainId: receiving.chainId,
+                toToken: receiving.token,
+                slippage: 0,
+                fromAddress: (tx as FullStatusData).fromAddress,
+                toAddress: (tx as FullStatusData).toAddress,
+              },
+              estimate: {
+                tool: tx.tool,
+                fromAmount: sending.amount ?? '',
+                toAmount: receiving.amount ?? '',
+                toAmountMin: receiving.amount ?? '',
+                approvalAddress: '',
+                executionDuration: 0,
+              },
+              tool: tx.tool,
+              toolDetails: usedTool,
+            },
+          ],
+          integrator: tx.metadata?.integrator ?? '',
+          execution: {
+            status: 'DONE', // can be FAILED
+            startedAt: sending.timestamp
+              ? sending.timestamp * 1000
+              : Date.now(),
+            actions: buildActionsFromTxHistory(tx),
+            fromAmount: sending.amount,
+            toAmount: receiving.amount,
+            toToken: receiving.token,
+            internalTxLink: tx.lifiExplorerLink,
+            externalTxLink: tx.bridgeExplorerLink,
+            gasCosts: [
+              {
+                amount: sending.gasAmount,
+                amountUSD: sending.gasAmountUSD,
+                token: sending.gasToken,
+                estimate: '0',
+                limit: '0',
+                price: '0',
+                type: 'SEND',
+              },
+            ],
+            feeCosts,
+          },
+        },
+      ],
+      insurance: {
+        state: 'NOT_INSURABLE',
+        feeAmountUsd: '0',
+      },
+    },
+  }
+
+  return routeExecution
+}

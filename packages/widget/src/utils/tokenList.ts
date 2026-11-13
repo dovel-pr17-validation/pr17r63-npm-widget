@@ -1,0 +1,322 @@
+import { formatUnits, type TokenExtended } from '@lifi/sdk'
+import type { TokenAmount, TokenAmountExtended } from '../types/token.js'
+import type { WidgetTokens } from '../types/widget.js'
+
+const sortByBalances = (a: TokenAmount, b: TokenAmount) =>
+  Number.parseFloat(formatUnits(b.amount ?? 0n, b.decimals)) *
+    Number.parseFloat(b.priceUSD ?? '0') -
+  Number.parseFloat(formatUnits(a.amount ?? 0n, a.decimals)) *
+    Number.parseFloat(a.priceUSD ?? '0')
+
+const sortByVolume = (a: TokenExtended, b: TokenExtended) =>
+  (b.volumeUSD24H ?? 0) - (a.volumeUSD24H ?? 0)
+
+export const processTokenList = (
+  withoutBalances: boolean,
+  noCategories: boolean,
+  configTokens?: WidgetTokens,
+  selectedChainId?: number,
+  tokens?: TokenExtended[],
+  tokensWithBalances?: TokenAmount[],
+  isPinnedToken?: (chainId: number, tokenAddress: string) => boolean
+): {
+  processedTokens: TokenAmount[]
+  withCategories: boolean
+  withPinnedTokens: boolean
+} => {
+  if (withoutBalances) {
+    if (noCategories) {
+      const sortedTokens = [...(tokens ?? [])].sort(sortByVolume)
+      // Separate pinned tokens
+      if (isPinnedToken) {
+        const pinned: TokenAmount[] = []
+        const notPinned: TokenAmount[] = []
+        for (const token of sortedTokens) {
+          if (isPinnedToken(token.chainId, token.address)) {
+            const pinnedToken = { ...token, pinned: true } as TokenAmount
+            pinned.push(pinnedToken)
+          } else {
+            notPinned.push(token)
+          }
+        }
+        return {
+          processedTokens: [...pinned, ...notPinned],
+          withCategories: false,
+          withPinnedTokens: !!pinned.length,
+        }
+      }
+      return {
+        processedTokens: sortedTokens,
+        withCategories: false,
+        withPinnedTokens: false,
+      }
+    } else {
+      return processedTypedTokens(
+        tokens ?? [],
+        [],
+        selectedChainId,
+        configTokens,
+        isPinnedToken
+      )
+    }
+  }
+
+  const sortedTokensWithBalances = [...(tokensWithBalances ?? [])].sort(
+    sortByBalances
+  )
+
+  const tokensWithBalancesSet = new Set(
+    sortedTokensWithBalances.map(
+      (token) => `${token.chainId}-${token.address.toLowerCase()}`
+    )
+  )
+  const tokensWithoutBalances =
+    tokens
+      ?.filter((token) => {
+        const tokenKey = `${token.chainId}-${token.address.toLowerCase()}`
+        return !tokensWithBalancesSet.has(tokenKey)
+      })
+      .sort(sortByVolume) ?? []
+
+  if (noCategories) {
+    // Separate pinned tokens
+    if (isPinnedToken) {
+      const pinnedWithBalances: TokenAmount[] = []
+      const notPinnedWithBalances: TokenAmount[] = []
+      const pinnedWithoutBalances: TokenAmount[] = []
+      const notPinnedWithoutBalances: TokenAmount[] = []
+
+      for (const token of sortedTokensWithBalances) {
+        if (isPinnedToken(token.chainId, token.address)) {
+          const pinnedToken = { ...token, pinned: true } as TokenAmount
+          pinnedWithBalances.push(pinnedToken)
+        } else {
+          notPinnedWithBalances.push(token)
+        }
+      }
+
+      for (const token of tokensWithoutBalances) {
+        if (isPinnedToken(token.chainId, token.address)) {
+          const pinnedToken = { ...token, pinned: true } as TokenAmount
+          pinnedWithoutBalances.push(pinnedToken)
+        } else {
+          notPinnedWithoutBalances.push(token)
+        }
+      }
+
+      return {
+        processedTokens: [
+          ...pinnedWithBalances,
+          ...pinnedWithoutBalances,
+          ...notPinnedWithBalances,
+          ...notPinnedWithoutBalances,
+        ],
+        withCategories: false,
+        withPinnedTokens:
+          !!pinnedWithBalances.length || !!pinnedWithoutBalances.length,
+      }
+    }
+    return {
+      processedTokens: [...sortedTokensWithBalances, ...tokensWithoutBalances],
+      withCategories: false,
+      withPinnedTokens: false,
+    }
+  } else {
+    return processedTypedTokens(
+      tokensWithoutBalances,
+      sortedTokensWithBalances,
+      selectedChainId,
+      configTokens,
+      isPinnedToken
+    )
+  }
+}
+
+// NB: only for non-all-networks
+const processedTypedTokens = (
+  tokens: TokenAmount[],
+  tokensWithBalances: TokenAmount[],
+  selectedChainId?: number,
+  configTokens?: WidgetTokens,
+  isPinnedToken?: (chainId: number, tokenAddress: string) => boolean
+) => {
+  const filteredTokensMap = new Map(
+    tokens.map((token) => [token.address, token])
+  )
+
+  const pinnedTokens: TokenAmount[] = []
+  const featuredTokensFromConfig: TokenAmount[] = []
+  const popularTokensFromConfig: TokenAmount[] = []
+
+  ;(['popular', 'featured'] as const).forEach((tokenType) => {
+    const typedTokens = configTokens?.[tokenType]?.filter(
+      (token) => token.chainId === selectedChainId
+    )
+
+    typedTokens?.forEach((token) => {
+      const tokenAmount = { ...token } as TokenAmount
+      tokenAmount[tokenType] = true
+      // Config tokens are explicitly set by integrator, mark as verified
+      tokenAmount.verified = true
+
+      const match = filteredTokensMap.get(token.address)
+      if (match?.priceUSD) {
+        tokenAmount.priceUSD = match.priceUSD
+      }
+      if (!token.logoURI && match?.logoURI) {
+        tokenAmount.logoURI = match.logoURI
+      }
+
+      if (tokenType === 'popular') {
+        popularTokensFromConfig.push(tokenAmount)
+      } else {
+        featuredTokensFromConfig.push(tokenAmount)
+      }
+
+      // Additionally add to pinned tokens if it is pinned
+      const isPinned =
+        isPinnedToken && selectedChainId
+          ? isPinnedToken(selectedChainId, token.address)
+          : false
+      if (isPinned) {
+        const pinnedToken = { ...tokenAmount, pinned: true } as TokenAmount
+        pinnedTokens.push(pinnedToken)
+      }
+    })
+  })
+
+  // Filter out config-added tokens from main list
+  const configTokenAddresses = new Set(
+    [...popularTokensFromConfig, ...featuredTokensFromConfig].map((t) =>
+      t.address.toLowerCase()
+    )
+  )
+
+  const remainingTokens = tokens.filter(
+    (token) => !configTokenAddresses.has(token.address.toLowerCase())
+  )
+
+  const otherTokens: TokenAmount[] = []
+
+  // Separate pinned tokens and categorize remaining tokens
+  for (const token of remainingTokens) {
+    const isPinned =
+      isPinnedToken && selectedChainId
+        ? isPinnedToken(selectedChainId, token.address)
+        : false
+
+    if (isPinned) {
+      const pinnedToken = { ...token, pinned: true } as TokenAmount
+      pinnedTokens.push(pinnedToken)
+    } else if (token.featured) {
+      featuredTokensFromConfig.push(token)
+    } else if (token.popular) {
+      popularTokensFromConfig.push(token)
+    } else {
+      otherTokens.push(token)
+    }
+  }
+
+  // Also check tokens with balances for pinned status
+  const pinnedTokensWithBalances: TokenAmount[] = []
+  const nonPinnedTokensWithBalances: TokenAmount[] = []
+
+  if (isPinnedToken && selectedChainId) {
+    for (const token of tokensWithBalances) {
+      if (isPinnedToken(selectedChainId, token.address)) {
+        const pinnedToken = { ...token, pinned: true } as TokenAmount
+        pinnedTokensWithBalances.push(pinnedToken)
+      } else {
+        nonPinnedTokensWithBalances.push(token)
+      }
+    }
+  } else {
+    nonPinnedTokensWithBalances.push(...tokensWithBalances)
+  }
+
+  const sortedPinnedTokens = [
+    ...pinnedTokens,
+    ...pinnedTokensWithBalances,
+  ].sort(sortByVolume)
+  const sortedFeaturedTokens = [...featuredTokensFromConfig].sort(sortByVolume)
+  const sortedPopularTokens = [...popularTokensFromConfig].sort(sortByVolume)
+  const sortedOtherTokens = [...otherTokens].sort(sortByVolume)
+
+  return {
+    processedTokens: [
+      ...sortedPinnedTokens,
+      ...sortedFeaturedTokens,
+      ...nonPinnedTokensWithBalances,
+      ...sortedPopularTokens,
+      ...sortedOtherTokens,
+    ],
+    withCategories:
+      !!featuredTokensFromConfig.length || !!popularTokensFromConfig.length,
+    withPinnedTokens: !!sortedPinnedTokens.length,
+  }
+}
+
+/**
+ * Builds the filter for one search, so the query is normalized once instead of
+ * once per token: an all-networks list holds tens of thousands of rows, where
+ * normalizing per row costs more than the matching itself. Binding the mode
+ * here also keeps every call site of one search on the same rule.
+ *
+ * An address search matches the token at that address only. Impersonators
+ * embed a real address in their name or symbol, so a substring match on
+ * those fields would surface them for the very query meant to avoid them.
+ */
+export const createSearchMatcher = (
+  search: string | undefined,
+  isAddressSearch: boolean
+): ((token: TokenExtended | TokenAmountExtended) => boolean) => {
+  const searchTerm = search?.trim().toLowerCase()
+
+  if (!searchTerm) {
+    return () => true
+  }
+
+  if (isAddressSearch) {
+    return (token) => token.address?.toLowerCase() === searchTerm
+  }
+
+  return (token) =>
+    Boolean(
+      token.name?.toLowerCase().includes(searchTerm) ||
+      token.symbol?.replaceAll('₮', 'T').toLowerCase().includes(searchTerm) ||
+      token.address?.toLowerCase().includes(searchTerm)
+    )
+}
+
+export const isHoistableNative = (
+  token: TokenAmount | undefined,
+  selectedChainId?: number
+): boolean =>
+  !!token?.native &&
+  !token.pinned &&
+  !token.featured &&
+  !token.popular &&
+  !token.verified &&
+  (selectedChainId === undefined || token.chainId === selectedChainId)
+
+/**
+ * Moves the chain's native token to the top of its own chain's list, unless an
+ * external list already places it. Returns the array unchanged when nothing
+ * moves, so a memo downstream keeps its reference.
+ */
+export const hoistNativeToken = (
+  tokens: TokenAmount[],
+  selectedChainId?: number
+): TokenAmount[] => {
+  if (!selectedChainId) {
+    return tokens
+  }
+  const index = tokens.findIndex((token) =>
+    isHoistableNative(token, selectedChainId)
+  )
+  // -1 is no native token, 0 is already first
+  if (index < 1) {
+    return tokens
+  }
+  return [tokens[index], ...tokens.slice(0, index), ...tokens.slice(index + 1)]
+}

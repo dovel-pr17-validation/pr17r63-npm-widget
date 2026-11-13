@@ -1,0 +1,72 @@
+{
+  "name": "@lifi/wallet-management",
+  "version": "4.3.5",
+  "description": "LI.FI Wallet Management solution.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "watch": "tsdown --watch",
+    "build": "pnpm clean && tsdown",
+    "build:prerelease": "node ../../scripts/prerelease.js && cpy '../../README.md' .",
+    "build:postrelease": "node ../../scripts/postrelease.js && rm -rf README.md",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:affected": "vitest run --since-last-run",
+    "check:types": "tsc --noEmit",
+    "check:circular-deps": "madge --circular $(find ./src -name '*.ts' -o -name '*.tsx')",
+    "check:circular-deps-graph": "madge --circular $(find ./src -name '*.ts' -o -name '*.tsx') --image graph.svg"
+  },
+  "author": "Eugene Chybisov <eugene@li.finance>",
+  "homepage": "https://github.com/lifinance/widget",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lifinance/widget.git",
+    "directory": "packages/wallet-management"
+  },
+  "bugs": {
+    "url": "https://github.com/lifinance/widget/issues"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "wallet",
+    "wallet-management",
+    "metamask",
+    "wallet-connect",
+    "coinbase",
+    "eip1193",
+    "ethereum",
+    "ENS",
+    "web3",
+    "blockchain",
+    "lifi",
+    "tron"
+  ],
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@lifi/sdk": "^4.12.1",
+    "@lifi/widget-provider": "workspace:*",
+    "@mui/icons-material": "^9.5.0",
+    "@mui/material": "^9.5.0",
+    "@mui/system": "^9.5.0",
+    "eventemitter3": "^5.0.4",
+    "i18next": "^27.1.1",
+    "react-i18next": "^18.0.1",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "cpy-cli": "^7.0.0",
+    "madge": "^8.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": ">=5.90.0",
+    "react": ">=19",
+    "react-dom": ">=19"
+  }
+}

@@ -1,0 +1,89 @@
+import { type ChainId, getToken, type TokenExtended } from '@lifi/sdk'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSDKClient } from '../providers/SDKClientProvider.js'
+import { useWidgetConfig } from '../providers/WidgetProvider/WidgetProvider.js'
+import type { FormType } from '../stores/form/types.js'
+import type { TokensByChain } from '../types/token.js'
+import { isFormItemAllowed } from '../utils/item.js'
+import { getQueryKey } from '../utils/queries.js'
+import { getChainTokenAllowSets } from '../utils/token.js'
+
+export const useTokenSearch = (
+  chainId?: number,
+  tokenQuery?: string,
+  enabled?: boolean,
+  formType?: FormType
+): {
+  token: TokenExtended | undefined
+  isLoading: boolean
+} => {
+  const queryClient = useQueryClient()
+  const { tokens: configTokens, storageScopeKey } = useWidgetConfig()
+  const sdkClient = useSDKClient()
+
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      getQueryKey('token-search', storageScopeKey),
+      chainId,
+      tokenQuery,
+    ],
+    queryFn: async ({ queryKey: [, chainId, tokenQuery], signal }) => {
+      const token = await getToken(
+        sdkClient,
+        chainId as ChainId,
+        tokenQuery as string,
+        {
+          signal,
+        }
+      )
+
+      if (token) {
+        // Filter config tokens by chain before checking if token is allowed
+        const filteredConfigTokens = getChainTokenAllowSets(
+          configTokens,
+          token.chainId,
+          formType
+        )
+
+        // Return undefined if the token is denied
+        if (
+          !isFormItemAllowed(token, filteredConfigTokens, formType, (t) =>
+            t.address.toLowerCase()
+          )
+        ) {
+          return null
+        }
+
+        // Add token to main tokens cache
+        queryClient.setQueriesData<TokensByChain>(
+          { queryKey: [getQueryKey('tokens', storageScopeKey)] },
+          (data) => {
+            if (!data) {
+              return data
+            }
+            const chainTokens = data[chainId as number]
+            if (
+              chainTokens?.some(
+                (t) => t.address.toLowerCase() === token.address.toLowerCase()
+              )
+            ) {
+              return data
+            }
+            return {
+              ...data,
+              [chainId as number]: [...(chainTokens ?? []), token],
+            }
+          }
+        )
+      }
+      return token as TokenExtended
+    },
+
+    enabled: Boolean(chainId && tokenQuery && enabled),
+    retry: false,
+  })
+  return {
+    token: data || undefined,
+    isLoading,
+  }
+}

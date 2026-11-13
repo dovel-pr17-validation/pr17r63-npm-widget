@@ -1,0 +1,27 @@
+name: 'PNPM install'
+description: 'Run pnpm install (pnpm store cache on by default)'
+
+inputs:
+  cache:
+    description: >-
+      Use the pnpm store cache. Set "false" in privileged jobs (publish / version
+      PR / preview) so a poisoned cache can't reach a context with publish/write perms.
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '26'
+        registry-url: 'https://registry.npmjs.org'
+        # '' disables caching entirely (no restore, no save) for privileged jobs.
+        cache: ${{ inputs.cache == 'true' && 'pnpm' || '' }}
+    - name: Install dependencies
+      env:
+        HUSKY: '0' # By default do not run HUSKY install
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline

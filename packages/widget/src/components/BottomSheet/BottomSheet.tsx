@@ -1,0 +1,74 @@
+import { Drawer } from '@mui/material'
+import type { JSX, Ref } from 'react'
+import {
+  startTransition,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
+import { useGetScrollableContainer } from '../../hooks/useScrollableContainer.js'
+import { modalProps, slotProps } from '../Dialog/Dialog.js'
+import type { BottomSheetBase, BottomSheetProps } from './types.js'
+
+export const BottomSheet = ({
+  elementRef,
+  children,
+  open,
+  onClose,
+  keepMounted = false,
+  ref,
+}: Omit<BottomSheetProps, 'ref'> & {
+  ref?: Ref<BottomSheetBase>
+}): JSX.Element => {
+  const getContainer = useGetScrollableContainer()
+  const openRef = useRef(open)
+  const [drawerOpen, setDrawerOpen] = useState(open)
+  const [isInert, setIsInert] = useState(!open)
+
+  const close = useCallback(() => {
+    if (!openRef.current) {
+      return
+    }
+    // Set inert first to prevent focus issues
+    setIsInert(true)
+    // Push the state update to the next event loop tick
+    // to ensure the inert is applied to before the drawer is closed
+    startTransition(() => {
+      setDrawerOpen(false)
+      openRef.current = false
+      onClose?.()
+    })
+  }, [onClose])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      isOpen: () => openRef.current,
+      open: () => {
+        setIsInert(false)
+        setDrawerOpen(true)
+        openRef.current = true
+      },
+      close,
+    }),
+    [close]
+  )
+
+  return (
+    <Drawer
+      container={getContainer}
+      ref={elementRef}
+      anchor="bottom"
+      open={drawerOpen}
+      onClose={close}
+      ModalProps={modalProps}
+      slotProps={slotProps}
+      disableAutoFocus
+      keepMounted={keepMounted}
+      inert={isInert}
+    >
+      {children}
+    </Drawer>
+  )
+}
